@@ -1,37 +1,46 @@
-
 package com.grupo10.epicentrogourmet.entities;
 
-import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 @Entity
+@Getter @Setter @NoArgsConstructor
 public class Festival {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String nombre;
     private String temporada;
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
 
-    @OneToMany(mappedBy = "festival", cascade = CascadeType.ALL)
+
+    @OneToMany(mappedBy = "festival", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Set<UnidadVenta> unidadesVenta = new HashSet<>();
 
-    @OneToMany(mappedBy = "festival")
-    private Set<Pedido> pedidos = new HashSet<>();
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
 
-    public Festival() {}
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
-    // getters/setters
-    public Set<UnidadVenta> getUnidadesVenta() { return unidadesVenta; }
-    public void setUnidadesVenta(Set<UnidadVenta> unidadesVenta) { this.unidadesVenta = unidadesVenta; }
-
-    public void setFechaFin(LocalDate fechaFin) {
-        if (fechaFin != null && fechaInicio != null && fechaFin.isBefore(fechaInicio)) {
-            throw new IllegalArgumentException("La fecha fin no puede ser antes del inicio");
-        }
+    public Festival(String nombre, String temporada, LocalDate fechaInicio, LocalDate fechaFin) {
+        this.nombre = nombre;
+        this.temporada = temporada;
+        this.fechaInicio = fechaInicio;
         this.fechaFin = fechaFin;
     }
 }

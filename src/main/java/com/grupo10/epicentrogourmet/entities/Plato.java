@@ -1,8 +1,17 @@
 package com.grupo10.epicentrogourmet.entities;
 
+import java.time.LocalDateTime;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
+@Getter @Setter @NoArgsConstructor
 public class Plato {
 
 	@Id
@@ -13,12 +22,16 @@ public class Plato {
 	private double precioVenta;
 	private double costoProduccion;
 
-	@ManyToOne
-	private UnidadVenta unidadVenta; // el dueño de este plato
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "unidad_venta_id")
+	private UnidadVenta unidadVenta;
 
-	public Plato() {
-		// Constructor vacío requerido por Hibernate
-	}
+	@CreationTimestamp
+	@Column(updatable = false)
+	private LocalDateTime createdAt;
+
+	@UpdateTimestamp
+	private LocalDateTime updatedAt;
 
 	public Plato(String nombre, double precioVenta, double costoProduccion) {
 		this.nombre = nombre;
@@ -29,18 +42,6 @@ public class Plato {
 	public double calcularGanancia() {
 		return precioVenta - costoProduccion;
 	}
-
-	// getters y setters...
-	public Long getId() { return id; }
-	public void setId(Long id) { this.id = id; }
-	public String getNombre() { return nombre; }
-	public void setNombre(String nombre) { this.nombre = nombre; }
-	public double getPrecioVenta() { return precioVenta; }
-	public void setPrecioVenta(double precioVenta) { this.precioVenta = precioVenta; }
-	public double getCostoProduccion() { return costoProduccion; }
-	public void setCostoProduccion(double costoProduccion) { this.costoProduccion = costoProduccion; }
-	public UnidadVenta getUnidadVenta() { return unidadVenta; }
-	public void setUnidadVenta(UnidadVenta unidadVenta) { this.unidadVenta = unidadVenta; }
 
 	@Override
 	public String toString() {

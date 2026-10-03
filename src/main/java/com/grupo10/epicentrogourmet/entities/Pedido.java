@@ -1,11 +1,20 @@
 package com.grupo10.epicentrogourmet.entities;
 
-import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 @Entity
+@Getter @Setter @NoArgsConstructor
 public class Pedido {
 
 	@Id
@@ -14,19 +23,23 @@ public class Pedido {
 
 	private LocalDate fechaTransaccion;
 
-	@ManyToOne
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "unidad_venta_id")
 	private UnidadVenta unidadVenta;
 
-	@ManyToOne
-	private Cajero cajero; // sera el encargado de recaudar el dinero
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "cajero_id")
+	private Cajero cajero;
 
-	@ManyToOne
-	private Festival festival; // lo necesitás para el reporte del Hito 2
-
-	@OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
 	private Set<DetallePedido> detalles = new HashSet<>();
 
-	public Pedido() {}
+	@CreationTimestamp
+	@Column(updatable = false)
+	private LocalDateTime createdAt;
+
+	@UpdateTimestamp
+	private LocalDateTime updatedAt;
 
 	public Pedido(LocalDate fechaTransaccion, UnidadVenta unidadVenta, Cajero cajero) {
 		this.fechaTransaccion = fechaTransaccion;
@@ -34,10 +47,11 @@ public class Pedido {
 		this.cajero = cajero;
 	}
 
+
 	public void agregarDetalle(Plato plato, int cantidad) {
 		if (plato == null || cantidad <= 0) return;
 		for (DetallePedido d : this.detalles) {
-			if (d.getPlato() != null && d.getPlato().getId() != null && d.getPlato().getId().equals(plato.getId())) {
+			if (d.getPlato() != null && plato.getId() != null && d.getPlato().getId().equals(plato.getId())) {
 				d.setCantidad(d.getCantidad() + cantidad);
 				return;
 			}
@@ -46,7 +60,14 @@ public class Pedido {
 		this.detalles.add(nuevo);
 	}
 
-	// getters/setters
-	public Cajero getCajero() { return cajero; }
-	public void setCajero(Cajero cajero) { this.cajero = cajero; }
+	public double calcularTotal() {
+		return detalles.stream()
+				.mapToDouble(d -> d.getPlato().getPrecioVenta() * d.getCantidad())
+				.sum();
+	}
+
+	@Transient
+	public Festival getFestival() {
+		return unidadVenta != null ? unidadVenta.getFestival() : null;
+	}
 }

@@ -1,28 +1,53 @@
 package com.grupo10.epicentrogourmet.entities;
 
-import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Period;
 
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 @Entity
-@Inheritance(strategy = InheritanceType.JOINED)
+@Getter @Setter @NoArgsConstructor
+@Inheritance(strategy = InheritanceType.JOINED) // Igual que el de Oscar - https://www.baeldung.com/hibernate-inheritance
 public abstract class Personal {
 
-	@Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
+
 	private String nombre;
 	private String apellido;
+
+	@Column(unique = true)
 	private String dni;
+
 	private LocalDate fechaDeNacimiento;
 	private LocalDate fechaDeIngreso;
-	protected double sueldoBase; // protected para que lo vean los hijos
 
-	@ManyToOne
-	protected UnidadVenta unidadAsignada;
+	@Column(nullable = false)
+	private double sueldoBase;
 
-	protected Personal() {}
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "unidad_asignada_id")
+	private UnidadVenta unidadAsignada;
 
-	public Personal(String nombre, String apellido, String dni, LocalDate fechaDeNacimiento, LocalDate fechaDeIngreso, double sueldoBase) {
+	// LO MISMO QUE EL DE OSCAR
+	@CreationTimestamp
+	@Column(updatable = false)
+	private LocalDateTime createdAt;
+
+	@UpdateTimestamp
+	private LocalDateTime updatedAt;
+
+
+	public Personal(Long id, String nombre, String apellido, String dni, LocalDate fechaDeNacimiento, LocalDate fechaDeIngreso, double sueldoBase) {
+		this.id = id;
 		this.nombre = nombre;
 		this.apellido = apellido;
 		this.dni = dni;
@@ -31,17 +56,16 @@ public abstract class Personal {
 		this.sueldoBase = sueldoBase;
 	}
 
+	public Personal(String nombre, String apellido, String dni) {
+		this.nombre = nombre;
+		this.apellido = apellido;
+		this.dni = dni;
+	}
+
 	public int getAntiguedad() {
 		if (fechaDeIngreso == null) return 0;
 		return Period.between(fechaDeIngreso, LocalDate.now()).getYears();
 	}
 
 	public abstract double calcularSueldo();
-
-	// GETTERS QUE TE FALTAN
-	public Long getId() { return id; }
-	public String getDni() { return dni; }
-	public double getSueldoBase() { return sueldoBase; }
-	public UnidadVenta getUnidadAsignada() { return unidadAsignada; }
-	public void setUnidadAsignada(UnidadVenta u) { this.unidadAsignada = u; }
 }
