@@ -16,6 +16,11 @@ public class Pedido {
 
 	private LocalDate fechaPedido;
 
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "unidad_venta_id", nullable = false)
+	private UnidadVenta unidadVenta;
+
 	@OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
 	private Set<DetallePedido> detalles = new HashSet<>();
 }
