@@ -4,10 +4,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
-
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,13 +19,23 @@ public class Festival {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String nombre;
+
+    @Column(nullable = false)
     private String temporada;
+
+    @Column(nullable = false)
     private LocalDate fechaInicio;
+
+    @Column(nullable = false)
     private LocalDate fechaFin;
 
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    @JoinColumn(name = "costos_id")
+    private Costos costos;
 
-    @OneToMany(mappedBy = "festival", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ManyToMany(mappedBy = "festivales", fetch = FetchType.LAZY)
     private Set<UnidadVenta> unidadesVenta = new HashSet<>();
 
     @CreationTimestamp
@@ -36,11 +44,4 @@ public class Festival {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
-
-    public Festival(String nombre, String temporada, LocalDate fechaInicio, LocalDate fechaFin) {
-        this.nombre = nombre;
-        this.temporada = temporada;
-        this.fechaInicio = fechaInicio;
-        this.fechaFin = fechaFin;
-    }
 }

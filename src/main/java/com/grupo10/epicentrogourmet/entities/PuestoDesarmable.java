@@ -11,12 +11,4 @@ public class PuestoDesarmable extends UnidadVenta {
 
 	private int cantidadCarpas;
 	private int tiempoMontajeMin;
-
-	public PuestoDesarmable(String nombreComercial, double superficieM2, String codigoUnico,
-							Festival festival, Personal responsable, int cantidadCarpas,
-							int tiempoMontajeMin) {
-		super(nombreComercial, superficieM2, codigoUnico, festival, responsable);
-		this.cantidadCarpas = cantidadCarpas;
-		this.tiempoMontajeMin = tiempoMontajeMin;
-	}
 }
