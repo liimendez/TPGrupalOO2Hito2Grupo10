@@ -1,0 +1,20 @@
+package com.grupo10.epicentrogourmet.repositories;
+
+import com.grupo10.epicentrogourmet.entities.UnidadVenta;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import java.io.Serializable;
+import java.util.List;
+import java.util.Optional;
+
+@Repository("unidadVentaRepository")
+public interface IUnidadVentaRepository extends JpaRepository<UnidadVenta, Serializable> {
+    public abstract Optional<UnidadVenta> findById(Long id);
+    public abstract Optional<UnidadVenta> findByCodigoUnico(String codigoUnico);
+    public abstract Optional<UnidadVenta> findByNombreComercial(String nombreComercial);
+
+    @Query("SELECT uv FROM UnidadVenta uv JOIN FETCH uv.festivales f WHERE f.id = (:idFestival)")
+    public abstract List<UnidadVenta> findByFestivalId(Long idFestival);
+}
