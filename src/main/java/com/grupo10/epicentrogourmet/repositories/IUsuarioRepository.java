@@ -10,6 +10,5 @@ import java.util.Optional;
 @Repository("usuarioRepository")
 public interface IUsuarioRepository extends JpaRepository<Usuario, Serializable> {
     Optional<Usuario> findByCorreo(String correo);
-    // si querés mantener compatibilidad con username, agregá también:
-    // Optional<Usuario> findByUsername(String username);
+
 }

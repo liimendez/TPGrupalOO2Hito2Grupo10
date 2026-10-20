@@ -11,7 +11,11 @@ public interface IPersonalService {
     Personal findByDni(String dni);
     Personal insertOrUpdate(Personal personal);
     boolean remove(Long id);
-
-    //  el JOIN FETCH devuelve DTO
     List<PersonalDTO> findByUnidadVentaId(Long idUnidad);
+
+    // LOGICA
+    int getEdad(Long idPersonal);
+    boolean esMayorDeEdad(Long idPersonal);
+    int getAntiguedadAnios(Long idPersonal);
+    long getAntiguedadMeses(Long idPersonal);
 }
