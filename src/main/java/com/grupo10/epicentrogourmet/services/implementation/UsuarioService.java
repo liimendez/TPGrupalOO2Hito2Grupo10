@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.grupo10.epicentrogourmet.entities.Usuario;
 import com.grupo10.epicentrogourmet.repositories.IUsuarioRepository;
 
@@ -18,18 +19,18 @@ public class UsuarioService implements UserDetailsService {
     private IUsuarioRepository usuarioRepository;
 
     @Override
+    @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        // username es el correo que escribís en el login
         Usuario usuario = usuarioRepository.findByCorreo(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
 
         return new User(
                 usuario.getCorreo(),
                 usuario.getPassword(),
-                usuario.isActivo(), // <--- ACÁ ESTABA EL ERROR, vos tenés activo no enabled
+                usuario.isActivo(),
                 true, true, true,
                 new ArrayList<SimpleGrantedAuthority>() {{
-                    add(new SimpleGrantedAuthority(usuario.getRol().getRol().name()));
+                    add(new SimpleGrantedAuthority("ROLE_" + usuario.getRol().getRol().name()));
                 }}
         );
     }

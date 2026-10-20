@@ -33,8 +33,9 @@ public class SecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers("/css/*", "/imgs/*", "/js/*", "/vendor/bootstrap/css/*",
-                            "/vendor/jquery/*", "/vendor/bootstrap/js/*", "/api/v1/**").permitAll();
+                    auth.requestMatchers("/login", "/loginprocess", "/loginsuccess",
+                            "/css/**", "/js/**", "/imgs/**",
+                            "/vendor/**", "/api/v1/**").permitAll();
                     auth.anyRequest().authenticated();
                 })
                 .formLogin(login -> {
@@ -42,12 +43,12 @@ public class SecurityConfiguration {
                     login.loginProcessingUrl("/loginprocess");
                     login.usernameParameter("username");
                     login.passwordParameter("password");
-                    login.defaultSuccessUrl("/loginsuccess");
+                    login.defaultSuccessUrl("/loginsuccess", true);
                     login.permitAll();
                 })
                 .logout(logout -> {
                     logout.logoutUrl("/logout");
-                    logout.logoutSuccessUrl("/login");
+                    logout.logoutSuccessUrl("/login?logout");
                     logout.permitAll();
                 })
                 .build();

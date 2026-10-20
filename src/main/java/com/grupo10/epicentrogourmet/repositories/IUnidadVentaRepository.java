@@ -11,10 +11,10 @@ import java.util.Optional;
 
 @Repository("unidadVentaRepository")
 public interface IUnidadVentaRepository extends JpaRepository<UnidadVenta, Serializable> {
-    public abstract Optional<UnidadVenta> findById(Long id);
-    public abstract Optional<UnidadVenta> findByCodigoUnico(String codigoUnico);
-    public abstract Optional<UnidadVenta> findByNombreComercial(String nombreComercial);
+    Optional<UnidadVenta> findById(Long id);
+    Optional<UnidadVenta> findByCodigoUnico(String codigoUnico);
+    Optional<UnidadVenta> findByNombreComercial(String nombreComercial);
 
-    @Query("SELECT uv FROM UnidadVenta uv JOIN FETCH uv.festivales f WHERE f.id = (:idFestival)")
-    public abstract List<UnidadVenta> findByFestivalId(Long idFestival);
+    @Query("SELECT uv FROM UnidadVenta uv JOIN uv.festivales f WHERE f.id = :idFestival")
+    List<UnidadVenta> findByFestivalId(Long idFestival);
 }
