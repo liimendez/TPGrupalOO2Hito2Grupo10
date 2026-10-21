@@ -51,7 +51,7 @@
                     </thead>
                     <tbody>
                     <tr th:each="festival : ${festivales}">
-                        <td class="px-4 text-muted" th:text="${festival.idFestival}"></td>
+                        <td class="px-4 text-light" th:text="${festival.id}"></td>
                         <td class="px-4 fw-bold text-warning" th:text="${festival.nombre}"></td>
                         <td class="px-4" th:text="${festival.temporada}"></td>
                         <td class="px-4 text-light opacity-75" th:text="${festival.fechaInicio}"></td>
