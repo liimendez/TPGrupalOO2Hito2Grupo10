@@ -13,6 +13,11 @@
             <div class="card bg-secondary bg-opacity-10 border border-secondary border-opacity-25 shadow-lg p-4 rounded-3">
                 <h2 class="h4 fw-bold text-warning mb-4 text-center">Registrar Unidad de Venta y Responsable 📝</h2>
 
+                <!-- MENSAJE DE ERROR DE CORREO DUPLICADO -->
+                <div th:if="${error}" class="alert alert-danger bg-danger text-white border-0 shadow-sm" role="alert">
+                    <strong>⚠️ Error:</strong> <span th:text="${error}">No se puede usar ese correo, está en uso</span>
+                </div>
+
                 <form th:action="@{/unidad-venta/save}" th:object="${unidadDTO}" method="post">
 
                     <!-- Valor de los atributos -->

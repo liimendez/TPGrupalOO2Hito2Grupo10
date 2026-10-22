@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Usuarios - Epicentro Gourmet</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-dark text-light">
+<div class="container py-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-warning fw-bold m-0">Gestión de Usuarios 👥</h2>
+        <a th:href="@{/}" class="btn btn-outline-light btn-sm">Volver al Inicio</a>
+    </div>
+
+    <!-- Mensajes de éxito -->
+    <div th:if="${param.eliminado}" class="alert alert-success bg-success text-white border-0 shadow-sm">
+        ✅ Usuario dado de baja con éxito
+    </div>
+    <div th:if="${param.alta}" class="alert alert-success bg-success text-white border-0 shadow-sm">
+        ✅ Usuario dado de alta con éxito
+    </div>
+    <div th:if="${param.modificado}" class="alert alert-success bg-success text-white border-0 shadow-sm">
+        ✅ Usuario modificado con éxito
+    </div>
+
+    <!-- Error de baja -->
+    <div th:if="${error}" class="alert alert-danger bg-danger text-white border-0 shadow-sm" role="alert">
+        <strong>⚠️ Error:</strong> <span th:text="${error}">No se puede eliminar</span>
+    </div>
+
+    <div class="card bg-secondary bg-opacity-10 border border-secondary border-opacity-25 shadow-lg rounded-3">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover align-middle mb-0">
+                    <thead class="table-warning">
+                    <tr>
+                        <th class="text-dark">ID</th>
+                        <th class="text-dark">Correo</th>
+                        <th class="text-dark">Rol</th>
+                        <th class="text-dark">Activo</th>
+                        <th class="text-dark text-center">Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="u : ${usuarios}">
+                        <td th:text="${u.id}"></td>
+                        <td th:text="${u.correo}" class="fw-semibold">yeyiimendez@gmail.com</td>
+                        <td><span class="badge bg-warning text-dark" th:text="${u.rol.rol}">RESPONSABLE</span></td>
+                        <td>
+                            <span th:if="${u.activo}" class="badge bg-success">true</span>
+                            <span th:if="${!u.activo}" class="badge bg-danger">false</span>
+                        </td>
+                        <td class="text-center">
+                            <a th:href="@{'/usuarios/editar/' + ${u.id}}" class="btn btn-sm btn-outline-warning me-1">Modificar</a>
+
+                            <!-- Si está activo -> muestra BAJA -->
+                            <a th:if="${u.activo}" th:href="@{'/usuarios/eliminar/' + ${u.id}}" class="btn btn-sm btn-danger"
+                               onclick="return confirm('¿Dar de baja este usuario?')">Baja</a>
+
+                            <!-- Si está inactivo -> muestra ALTA -->
+                            <a th:if="${!u.activo}" th:href="@{'/usuarios/alta/' + ${u.id}}" class="btn btn-sm btn-success"
+                               onclick="return confirm('¿Dar de alta este usuario?')">Alta</a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

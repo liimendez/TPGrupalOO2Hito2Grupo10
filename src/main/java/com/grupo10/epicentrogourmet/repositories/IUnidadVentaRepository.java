@@ -3,6 +3,7 @@ package com.grupo10.epicentrogourmet.repositories;
 import com.grupo10.epicentrogourmet.entities.UnidadVenta;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.io.Serializable;
@@ -17,4 +18,7 @@ public interface IUnidadVentaRepository extends JpaRepository<UnidadVenta, Seria
 
     @Query("SELECT uv FROM UnidadVenta uv JOIN uv.festivales f WHERE f.id = :idFestival")
     List<UnidadVenta> findByFestivalId(Long idFestival);
+
+    @Query("SELECT uv FROM UnidadVenta uv WHERE uv.responsable.correo = :correo")
+    Optional<UnidadVenta> findMiUnidad(@Param("correo") String correo);
 }

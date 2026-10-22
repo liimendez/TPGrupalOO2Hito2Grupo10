@@ -3,6 +3,7 @@ package com.grupo10.epicentrogourmet.services.implementation;
 import java.util.List;
 import java.util.Optional;
 import com.grupo10.epicentrogourmet.entities.*;
+import com.grupo10.epicentrogourmet.repositories.IPlatoRepository;
 import org.springframework.stereotype.Service;
 import com.grupo10.epicentrogourmet.repositories.IUnidadVentaRepository;
 import com.grupo10.epicentrogourmet.services.IUnidadVentaService;
@@ -19,55 +20,43 @@ public class UnidadVentaService implements IUnidadVentaService {
     private final IUsuarioRepository usuarioRepository;
     private final IUserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final IPlatoRepository platoRepository;
 
     public UnidadVentaService(IUnidadVentaRepository unidadVentaRepository,
                               IUsuarioRepository usuarioRepository,
                               IUserRoleRepository userRoleRepository,
-                              PasswordEncoder passwordEncoder) {
+                              PasswordEncoder passwordEncoder,
+                              IPlatoRepository platoRepository) {
         this.unidadVentaRepository = unidadVentaRepository;
         this.usuarioRepository = usuarioRepository;
         this.userRoleRepository = userRoleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.platoRepository = platoRepository;
     }
 
-    @Override public List<UnidadVenta> getAll()
-    { return unidadVentaRepository.findAll(); }
-    @Override public Optional<UnidadVenta> findById(Long id)
-    { return unidadVentaRepository.findById(id); }
-    @Override public boolean remove(Long id)
-    { if(unidadVentaRepository.existsById(id)){ unidadVentaRepository.deleteById(id); return true;} return false; }
+    @Override public List<UnidadVenta> getAll() { return unidadVentaRepository.findAll(); }
+    @Override public Optional<UnidadVenta> findById(Long id) { return unidadVentaRepository.findById(id); }
+    @Override public boolean remove(Long id) { if(unidadVentaRepository.existsById(id)){ unidadVentaRepository.deleteById(id); return true;} return false; }
 
     @Override
     public UnidadVenta insertOrUpdate(UnidadVenta uv) {
-        // Si no tiene codigo o es invalido, entonces se genera
         if (uv.getCodigoUnico() == null || uv.getCodigoUnico().isEmpty() || !isCodigoValido(uv.getCodigoUnico())) {
             uv.setCodigoUnico(generarCodigoUnico(uv));
         }
         return unidadVentaRepository.save(uv);
     }
 
-    // =========================================================
-    // codigo unico
-    // =========================================================
     @Override
     public String generarCodigoUnico(UnidadVenta uv) {
         String nombre = uv.getNombreComercial();
-        String baseNombre = (nombre != null && nombre.length() >= 3)
-                ? nombre.substring(0, 3).toUpperCase()
-                : "EGT";
-
-        // 6 dígitos usando nanoTime para unicidad
+        String baseNombre = (nombre != null && nombre.length() >= 3) ? nombre.substring(0, 3).toUpperCase() : "EGT";
         String numeros = String.valueOf(System.nanoTime());
         numeros = numeros.substring(numeros.length() - 6);
-
-        String sinVerificador = baseNombre + numeros; // 9 caracteres
+        String sinVerificador = baseNombre + numeros;
         int suma = 0;
-        for (char c : sinVerificador.toCharArray()) {
-            suma += c;
-        }
-        int verificador = suma % 10; // dígito verificador
-
-        return sinVerificador + verificador; // 3 + 6 + 1 = 10
+        for (char c : sinVerificador.toCharArray()) { suma += c; }
+        int verificador = suma % 10;
+        return sinVerificador + verificador;
     }
 
     @Override
@@ -75,50 +64,36 @@ public class UnidadVentaService implements IUnidadVentaService {
         if (codigo == null || codigo.length() != 10) return false;
         String base = codigo.substring(0, 9);
         int suma = 0;
-        for (char c : base.toCharArray()) {
-            suma += c;
-        }
+        for (char c : base.toCharArray()) { suma += c; }
         int esperado = suma % 10;
         int real = Character.getNumericValue(codigo.charAt(9));
         return esperado == real;
     }
 
-    // =========================================================
-    // Logica 2 : calculo de canon
-    // =========================================================
     @Override
     public double calcularCanon(Long idUnidadVenta) {
-        UnidadVenta uv = unidadVentaRepository.findById(idUnidadVenta)
-                .orElseThrow(() -> new RuntimeException("Unidad de venta no encontrada"));
-
+        UnidadVenta uv = unidadVentaRepository.findById(idUnidadVenta).orElseThrow(() -> new RuntimeException("Unidad de venta no encontrada"));
         double costoSuperficie = uv.getSuperficieM2() * 500;
-
         if (uv instanceof FoodTruck) {
             FoodTruck ft = (FoodTruck) uv;
-            // Food Truck: (areaSup * $500) + $2000 si requiere conexión electrica
             double plusElectricidad = ft.isRequiereConexionElectrica() ? 2000 : 0;
             return costoSuperficie + plusElectricidad;
         } else if (uv instanceof PuestoDesarmable) {
             PuestoDesarmable pd = (PuestoDesarmable) uv;
-            // Puesto: (areaSup * $500) - (Tiempo de Montaje * $10)
             return costoSuperficie - (pd.getTiempoMontajeMin() * 10);
         }
-
         return costoSuperficie;
     }
 
     @Override
     @Transactional
     public void registrarUnidadConResponsable(RequestUnidadVentaDTO dto) {
-        UserRole rolResponsable = userRoleRepository.findByRol(RoleType.RESPONSABLE)
-                .orElseThrow(() -> new RuntimeException("El rol RESPONSABLE no existe en la base de datos"));
-
+        UserRole rolResponsable = userRoleRepository.findByRol(RoleType.RESPONSABLE).orElseThrow(() -> new RuntimeException("El rol RESPONSABLE no existe"));
         Usuario usuario = new Usuario();
         usuario.setCorreo(dto.getCorreo());
         usuario.setPassword(passwordEncoder.encode(dto.getPassword()));
         usuario.setActivo(true);
         usuario.setRol(rolResponsable);
-
         Usuario usuarioGuardado = usuarioRepository.save(usuario);
 
         if ("FOODTRUCK".equalsIgnoreCase(dto.getTipoUnidad())) {
@@ -129,9 +104,7 @@ public class UnidadVentaService implements IUnidadVentaService {
             foodTruck.setPatente(dto.getPatente());
             foodTruck.setRequiereConexionElectrica(dto.isRequiereConexionElectrica());
             foodTruck.setResponsable(usuarioGuardado);
-
             insertOrUpdate(foodTruck);
-
         } else if ("PUESTODESARMABLE".equalsIgnoreCase(dto.getTipoUnidad())) {
             PuestoDesarmable puesto = new PuestoDesarmable();
             puesto.setNombreComercial(dto.getNombreComercial());
@@ -140,11 +113,44 @@ public class UnidadVentaService implements IUnidadVentaService {
             puesto.setCantidadCarpas(dto.getCantidadCarpas());
             puesto.setTiempoMontajeMin(dto.getTiempoMontajeMin());
             puesto.setResponsable(usuarioGuardado);
-
             insertOrUpdate(puesto);
-
         } else {
             throw new IllegalArgumentException("Tipo de unidad no válido: " + dto.getTipoUnidad());
         }
+    }
+
+    @Override
+    @Transactional
+    public void agregarPlato(Long unidadId, Plato plato) {
+        UnidadVenta uv = unidadVentaRepository.findById(unidadId).orElseThrow();
+        plato.setUnidadVenta(uv);
+        platoRepository.save(plato);
+    }
+
+    @Override
+    @Transactional
+    public void eliminarPlato(Long platoId) {
+        platoRepository.deleteById(platoId);
+    }
+
+    @Override
+    public UnidadVenta findByCorreoResponsable(String correo) {
+        return unidadVentaRepository.findMiUnidad(correo)
+                .orElseThrow(() -> new RuntimeException("No tenés unidad asignada: " + correo));
+    }
+
+    @Override
+    public Plato findPlatoById(Long id) {
+        return platoRepository.findById(id).orElseThrow(() -> new RuntimeException("Plato no encontrado"));
+    }
+
+    @Override
+    @Transactional
+    public void modificarPlato(Long id, Plato platoActualizado) {
+        Plato existente = platoRepository.findById(id).orElseThrow(() -> new RuntimeException("Plato no encontrado"));
+        existente.setNombre(platoActualizado.getNombre());
+        existente.setPrecioVenta(platoActualizado.getPrecioVenta());
+        existente.setCostoProduccion(platoActualizado.getCostoProduccion());
+        platoRepository.save(existente);
     }
 }

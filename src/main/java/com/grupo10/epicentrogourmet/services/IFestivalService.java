@@ -14,6 +14,7 @@ public interface IFestivalService {
     Optional<Festival> findById(Long id);
     Festival insertOrUpdate(Festival festival);
     boolean remove(Long id);
+    void agregarUnidadAFestival(Long festivalId, Long unidadVentaId);
     ReporteVentaDTO getRecaudacionTotal(Long festivalId);
     RentabilidadNetaDTO getRentabilidadNeta(Long festivalId, Long unidadVentaId);
     RentabilidadNetaDTO getRentabilidadNetaEntreFechas(Long festivalId, Long unidadVentaId, java.time.LocalDate desde, java.time.LocalDate hasta);

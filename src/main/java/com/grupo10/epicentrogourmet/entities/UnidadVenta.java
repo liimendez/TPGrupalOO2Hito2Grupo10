@@ -38,7 +38,7 @@ public abstract class UnidadVenta {
 	@OneToMany(mappedBy = "unidadAsignada", fetch = FetchType.LAZY)
 	private Set<Personal> staff = new HashSet<>();
 
-	@OneToMany(mappedBy = "unidadVenta", fetch = FetchType.LAZY)
+	@OneToMany(mappedBy = "unidadVenta", fetch = FetchType.EAGER)
 	private Set<Plato> platosOfrecidos = new HashSet<>();
 
 	@OneToMany(mappedBy = "unidadVenta", fetch = FetchType.LAZY)

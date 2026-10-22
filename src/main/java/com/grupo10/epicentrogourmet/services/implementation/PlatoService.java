@@ -31,6 +31,6 @@ public class PlatoService implements IPlatoService {
 
     @Override
     public List<Plato> findByUnidadVentaId(Long idUnidad) {
-        return repo.findByUnidadVentaId(idUnidad);
+        return repo.findByUnidadVenta_Id(idUnidad);
     }
 }
