@@ -18,4 +18,7 @@ public class RequestUnidadVentaDTO {
     // Solo si es PUESTODESARMABLE
     private int cantidadCarpas;
     private int tiempoMontajeMin;
+
+    private String correo;
+    private String password;
 }

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Registrar Unidad de Venta</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-dark text-light">
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card bg-secondary bg-opacity-10 border border-secondary border-opacity-25 shadow-lg p-4 rounded-3">
+                <h2 class="h4 fw-bold text-warning mb-4 text-center">Registrar Unidad de Venta y Responsable 📝</h2>
+
+                <form th:action="@{/unidad-venta/save}" th:object="${unidadDTO}" method="post">
+
+                    <!-- Valor de los atributos -->
+                    <h5 class="text-warning border-bottom border-secondary pb-2 mb-3">Datos de la Unidad</h5>
+
+                    <div class="mb-3">
+                        <label class="form-label text-light">Nombre Comercial</label>
+                        <input type="text" class="form-control bg-dark text-light border-secondary" th:field="*{nombreComercial}" required>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-light">Código Único (Opcional)</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" th:field="*{codigoUnico}" placeholder="Se autogenera si se deja vacío">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-light">Superficie (m²)</label>
+                            <input type="number" step="0.01" class="form-control bg-dark text-light border-secondary" th:field="*{superficieM2}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-light">Tipo de Unidad</label>
+                            <select id="tipoUnidad" class="form-select bg-dark text-light border-secondary" th:field="*{tipoUnidad}" required onchange="toggleCampos()">
+                                <option value="FOODTRUCK">Food Truck</option>
+                                <option value="PUESTODESARMABLE">Puesto Desarmable</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Atributos especificos de Food Truck -->
+                    <div id="seccionFoodTruck" class="row border border-secondary border-opacity-50 p-3 rounded mb-3">
+                        <h6 class="text-info mb-3">Detalles de Food Truck</h6>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Patente</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" th:field="*{patente}">
+                        </div>
+                        <div class="col-md-6 mb-3 d-flex align-items-center">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input bg-dark border-secondary" type="checkbox" th:field="*{requiereConexionElectrica}" id="conexionElec">
+                                <label class="form-check-label text-light" for="conexionElec">¿Requiere Conexión Eléctrica?</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Atributos especificos de Puesto Desarmable -->
+                    <div id="seccionPuesto" class="row border border-secondary border-opacity-50 p-3 rounded mb-3" style="display: none;">
+                        <h6 class="text-info mb-3">Detalles de Puesto Desarmable</h6>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Cantidad de Carpas</label>
+                            <input type="number" class="form-control bg-dark text-light border-secondary" th:field="*{cantidadCarpas}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Tiempo de Montaje (min)</label>
+                            <input type="number" class="form-control bg-dark text-light border-secondary" th:field="*{tiempoMontajeMin}">
+                        </div>
+                    </div>
+
+                    <!-- Credenciales del Responsable -->
+                    <h5 class="text-warning border-bottom border-secondary pb-2 mt-4 mb-3">Credenciales del Responsable</h5>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Correo Electrónico (Usuario)</label>
+                            <input type="email" class="form-control bg-dark text-light border-secondary" th:field="*{correo}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light">Contraseña</label>
+                            <input type="password" class="form-control bg-dark text-light border-secondary" th:field="*{password}" required>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a th:href="@{/index}" class="btn btn-outline-light">Cancelar</a>
+                        <button type="submit" class="btn btn-warning fw-semibold">Guardar Unidad y Responsable</button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script para alternar entre FoodTruck y Puesto Desarmable -->
+<script>
+    function toggleCampos() {
+        const tipo = document.getElementById('tipoUnidad').value;
+        const seccionFT = document.getElementById('seccionFoodTruck');
+        const seccionPuesto = document.getElementById('seccionPuesto');
+
+        if (tipo === 'FOODTRUCK') {
+            seccionFT.style.display = 'flex';
+            seccionPuesto.style.display = 'none';
+        } else {
+            seccionFT.style.display = 'none';
+            seccionPuesto.style.display = 'flex';
+        }
+    }
+    // Se Ejecuta al cargar por si se recarga con un error
+    window.onload = toggleCampos;
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

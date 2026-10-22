@@ -2,19 +2,33 @@ package com.grupo10.epicentrogourmet.services.implementation;
 
 import java.util.List;
 import java.util.Optional;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.grupo10.epicentrogourmet.entities.*;
 import org.springframework.stereotype.Service;
-import com.grupo10.epicentrogourmet.entities.FoodTruck;
-import com.grupo10.epicentrogourmet.entities.PuestoDesarmable;
-import com.grupo10.epicentrogourmet.entities.UnidadVenta;
 import com.grupo10.epicentrogourmet.repositories.IUnidadVentaRepository;
 import com.grupo10.epicentrogourmet.services.IUnidadVentaService;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
+import com.grupo10.epicentrogourmet.dtos.RequestUnidadVentaDTO;
+import com.grupo10.epicentrogourmet.repositories.IUserRoleRepository;
+import com.grupo10.epicentrogourmet.repositories.IUsuarioRepository;
 
 @Service("unidadVentaService")
 public class UnidadVentaService implements IUnidadVentaService {
 
-    @Autowired
-    private IUnidadVentaRepository unidadVentaRepository;
+    private final IUnidadVentaRepository unidadVentaRepository;
+    private final IUsuarioRepository usuarioRepository;
+    private final IUserRoleRepository userRoleRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public UnidadVentaService(IUnidadVentaRepository unidadVentaRepository,
+                              IUsuarioRepository usuarioRepository,
+                              IUserRoleRepository userRoleRepository,
+                              PasswordEncoder passwordEncoder) {
+        this.unidadVentaRepository = unidadVentaRepository;
+        this.usuarioRepository = usuarioRepository;
+        this.userRoleRepository = userRoleRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @Override public List<UnidadVenta> getAll()
     { return unidadVentaRepository.findAll(); }
@@ -91,5 +105,46 @@ public class UnidadVentaService implements IUnidadVentaService {
         }
 
         return costoSuperficie;
+    }
+
+    @Override
+    @Transactional
+    public void registrarUnidadConResponsable(RequestUnidadVentaDTO dto) {
+        UserRole rolResponsable = userRoleRepository.findByRol(RoleType.RESPONSABLE)
+                .orElseThrow(() -> new RuntimeException("El rol RESPONSABLE no existe en la base de datos"));
+
+        Usuario usuario = new Usuario();
+        usuario.setCorreo(dto.getCorreo());
+        usuario.setPassword(passwordEncoder.encode(dto.getPassword()));
+        usuario.setActivo(true);
+        usuario.setRol(rolResponsable);
+
+        Usuario usuarioGuardado = usuarioRepository.save(usuario);
+
+        if ("FOODTRUCK".equalsIgnoreCase(dto.getTipoUnidad())) {
+            FoodTruck foodTruck = new FoodTruck();
+            foodTruck.setNombreComercial(dto.getNombreComercial());
+            foodTruck.setSuperficieM2(dto.getSuperficieM2());
+            foodTruck.setCodigoUnico(dto.getCodigoUnico());
+            foodTruck.setPatente(dto.getPatente());
+            foodTruck.setRequiereConexionElectrica(dto.isRequiereConexionElectrica());
+            foodTruck.setResponsable(usuarioGuardado);
+
+            insertOrUpdate(foodTruck);
+
+        } else if ("PUESTODESARMABLE".equalsIgnoreCase(dto.getTipoUnidad())) {
+            PuestoDesarmable puesto = new PuestoDesarmable();
+            puesto.setNombreComercial(dto.getNombreComercial());
+            puesto.setSuperficieM2(dto.getSuperficieM2());
+            puesto.setCodigoUnico(dto.getCodigoUnico());
+            puesto.setCantidadCarpas(dto.getCantidadCarpas());
+            puesto.setTiempoMontajeMin(dto.getTiempoMontajeMin());
+            puesto.setResponsable(usuarioGuardado);
+
+            insertOrUpdate(puesto);
+
+        } else {
+            throw new IllegalArgumentException("Tipo de unidad no válido: " + dto.getTipoUnidad());
+        }
     }
 }

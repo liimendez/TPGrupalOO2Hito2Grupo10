@@ -35,7 +35,8 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/", "/index","/login", "/loginprocess", "/loginsuccess",
                             "/css/**", "/js/**", "/imgs/**",
-                            "/vendor/**", "/api/v1/**", "/error/**").permitAll();
+                            "/vendor/**", "/api/v1/**", "/error/**",
+                            "/unidad-venta/**").permitAll();
                     auth.anyRequest().authenticated();
                 })
                 .formLogin(login -> {
