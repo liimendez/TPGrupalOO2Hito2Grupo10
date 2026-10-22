@@ -15,10 +15,13 @@ public interface IPedidoRepository extends JpaRepository<Pedido, Serializable> {
     Optional<Pedido> findById(Long id);
     List<Pedido> findByUnidadVentaId(Long unidadVentaId);
 
-
     @Query("SELECT p FROM Pedido p WHERE p.unidadVenta.id IN (SELECT uv.id FROM UnidadVenta uv JOIN uv.festivales f WHERE f.id = :festivalId)")
     List<Pedido> findByFestivalId(@Param("festivalId") Long festivalId);
 
     @Query("SELECT p FROM Pedido p JOIN p.unidadVenta uv JOIN uv.festivales f WHERE f.id = :festivalId AND uv.id = :unidadVentaId")
     List<Pedido> findByFestivalIdAndUnidadVentaId(@Param("festivalId") Long festivalId, @Param("unidadVentaId") Long unidadVentaId);
+
+
+    @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.detalles d LEFT JOIN FETCH d.plato WHERE p.unidadVenta.id IN (SELECT uv.id FROM UnidadVenta uv JOIN uv.festivales f WHERE f.id = :festivalId)")
+    List<Pedido> findByFestivalIdConDetalles(@Param("festivalId") Long festivalId);
 }

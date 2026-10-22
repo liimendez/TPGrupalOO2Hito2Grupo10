@@ -16,4 +16,9 @@ public interface IPersonalRepository extends JpaRepository<Personal, Serializabl
 
     @Query("SELECT p FROM Personal p WHERE p.unidadAsignada.id = :idUnidad")
     List<Personal> findByUnidadVentaId(@Param("idUnidad") Long idUnidad);
+
+    @Query(value = "SELECT * FROM personal WHERE id = :id", nativeQuery = true)
+    Optional<Personal> findByIdIncludingInactive(@Param("id") Long id);
+
+
 }

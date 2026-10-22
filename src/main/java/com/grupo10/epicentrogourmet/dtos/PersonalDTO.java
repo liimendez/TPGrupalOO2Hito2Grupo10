@@ -16,7 +16,7 @@ public class PersonalDTO {
 
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate fechaIngreso;
-
+    private String email; // para crear el Usuario
     private boolean activo;
     private String tipoPersonal; // "CAJERO" o "COCINERO"
     private String turno; // si es cajero
