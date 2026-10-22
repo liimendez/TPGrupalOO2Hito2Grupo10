@@ -10,9 +10,9 @@ public class ViewRouteHelper {
     public final static String USER_LOGOUT = "user/logout";
 
     // UNIDADVENTA
-    public final static String UNIDAD_VENTA_INDEX = "unidadventa/index";
-    public final static String UNIDAD_VENTA_NEW = "unidadventa/new";
-    public final static String UNIDAD_VENTA_FORM = "unidadventa/form";
+    public final static String UNIDAD_VENTA_INDEX = "unidad-venta/index";
+    public final static String UNIDAD_VENTA_NEW = "unidad-venta/new";
+    public final static String UNIDAD_VENTA_FORM = "unidad-venta/form";
 
     /**** Redirects ****/
     public final static String ROUTE = "/index";
