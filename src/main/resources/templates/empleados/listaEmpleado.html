@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Empleados</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #1e1e1e; }
+        .card-custom { background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 12px; }
+    </style>
+</head>
+<body class="text-light p-4">
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="text-warning mb-0">
+            Gestión de Empleados -
+            <span class="text-white text-capitalize" th:text="${unidad?.nombreComercial}">unidad</span>
+        </h3>
+        <a href="/" class="btn btn-outline-warning btn-sm rounded-pill">← Volver al Inicio</a>
+    </div>
+    <p class="text-secondary small mb-3">
+        ABM de empleados - <span th:text="${unidad?.nombreComercial}" class="text-capitalize">unidad</span>
+        <span class="badge bg-dark border ms-2" th:text="${#lists.size(empleados)} + ' empleados'">1 empleado</span>
+    </p>
+
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
+    <!-- FORM ALTA -->
+    <form th:action="@{/empleado/agregar}" th:object="${nuevoEmpleado}" method="post" class="p-3 card-custom mb-4">
+        <div class="row g-2">
+            <div class="col-md-3"><input th:field="*{nombre}" class="form-control" placeholder="Nombre" required></div>
+            <div class="col-md-3"><input th:field="*{apellido}" class="form-control" placeholder="Apellido" required></div>
+            <div class="col-md-2"><input th:field="*{dni}" class="form-control" placeholder="DNI" required></div>
+            <div class="col-md-4"><input th:field="*{email}" type="email" class="form-control" placeholder="Email (credenciales)" required></div>
+            <div class="col-md-3">
+                <label class="form-label text-warning small">Fecha Nacimiento</label>
+                <input th:field="*{fechaNacimiento}" type="date" class="form-control" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-warning small">Fecha Ingreso</label>
+                <input th:field="*{fechaIngreso}" type="date" class="form-control" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Tipo</label>
+                <select th:field="*{tipoPersonal}" class="form-select">
+                    <option value="CAJERO">CAJERO</option>
+                    <option value="COCINERO">COCINERO</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Categoría</label>
+                <select th:field="*{categoria}" class="form-select">
+                    <option value="CAJERO">CAJERO</option>
+                    <option value="COCINERO">COCINERO</option>
+                    <option value="AYUDANTE">AYUDANTE</option>
+                    <option value="LAVAPLATOS">LAVAPLATOS</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Turno</label>
+                <select th:field="*{turno}" class="form-select">
+                    <option value="MANIANA">MAÑANA</option>
+                    <option value="NOCHE">NOCHE</option>
+                </select>
+            </div>
+            <div class="col-md-12 mt-2">
+                <button class="btn btn-warning fw-bold">Agregar Empleado</button>
+            </div>
+        </div>
+    </form>
+
+    <div class="card-custom p-0 overflow-hidden">
+        <table class="table table-dark table-striped mb-0 align-middle">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Correo</th>
+                <th>Nombre</th>
+                <th>Rol</th>
+                <th>Activo</th>
+                <th>Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="e : ${empleados}" th:if="${e != null and e.id != null}">
+                <td th:text="${e.id}"></td>
+                <td th:text="${e.credenciales != null ? e.credenciales.correo : 'sin correo'}" style="font-weight:600"></td>
+                <td th:text="${e.nombre + ' ' + e.apellido}"></td>
+                <td><span class="badge rounded-pill border border-warning text-warning" th:text="${e.class.simpleName}">EMPLEADO</span></td>
+                <td>
+                    <span th:if="${e.activo}" class="badge rounded-pill bg-success bg-opacity-25 text-success border border-success">Activo</span>
+                    <span th:if="${!e.activo}" class="badge rounded-pill bg-danger bg-opacity-25 text-danger border border-danger">Inactivo</span>
+                </td>
+                <td>
+                    <a th:href="@{'/empleado/editar/' + ${e.id}}" class="btn btn-sm btn-outline-warning rounded-pill">Modificar</a>
+                    <form th:if="${e.activo}" th:action="@{/empleado/eliminar/{id}(id=${e.id})}" method="post" style="display:inline">
+                        <button class="btn btn-sm btn-outline-danger rounded-pill">Baja</button>
+                    </form>
+                    <form th:if="${!e.activo}" th:action="@{/empleado/reactivar/{id}(id=${e.id})}" method="post" style="display:inline">
+                        <button class="btn btn-sm btn-success rounded-pill px-3">Alta</button>
+                    </form>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(empleados)}">
+                <td colspan="6" class="text-center text-secondary py-4">No hay empleados en esta unidad - agrega uno con el form de arriba</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>
