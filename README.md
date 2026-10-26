@@ -1,5 +1,6 @@
 ﻿Hito 2 - TP Epicentro Gourmet - Grupo 10
 👩‍💻 Integrante del equipo 10: Livia Mendez - feature/LiiMendez
+
 🚀 Cómo levantar el proyecto
 1. Requisitos previos
 
