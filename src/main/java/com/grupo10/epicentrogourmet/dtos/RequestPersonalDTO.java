@@ -9,6 +9,7 @@ public class RequestPersonalDTO {
     private String nombre;
     private String apellido;
     private String dni;
+    private String email;
 
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate fechaNacimiento;

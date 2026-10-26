@@ -18,4 +18,9 @@ public interface IPersonalService {
     boolean esMayorDeEdad(Long idPersonal);
     int getAntiguedadAnios(Long idPersonal);
     long getAntiguedadMeses(Long idPersonal);
+
+    Personal altaConUsuario(String tipo, PersonalDTO dto, Long unidadId);
+    Personal reactivar(Long id);
+
+
 }

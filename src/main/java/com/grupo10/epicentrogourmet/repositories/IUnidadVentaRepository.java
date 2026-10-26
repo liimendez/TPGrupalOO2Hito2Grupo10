@@ -21,4 +21,7 @@ public interface IUnidadVentaRepository extends JpaRepository<UnidadVenta, Seria
 
     @Query("SELECT uv FROM UnidadVenta uv WHERE uv.responsable.correo = :correo")
     Optional<UnidadVenta> findMiUnidad(@Param("correo") String correo);
+
+    @Query("SELECT uv FROM UnidadVenta uv LEFT JOIN FETCH uv.platosOfrecidos p WHERE uv.id = :id ORDER BY p.id ASC")
+    Optional<UnidadVenta> findByIdWithPlatos(@Param("id") Long id);
 }

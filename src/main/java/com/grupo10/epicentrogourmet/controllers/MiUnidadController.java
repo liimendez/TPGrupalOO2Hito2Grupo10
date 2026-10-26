@@ -22,7 +22,7 @@ public class MiUnidadController {
     @GetMapping
     public ModelAndView miUnidad() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String correo = auth.getName(); // yeyiimendez@gmail.com
+        String correo = auth.getName();
 
         UnidadVenta unidad = unidadVentaService.findByCorreoResponsable(correo);
 
@@ -57,7 +57,7 @@ public class MiUnidadController {
 
     @PostMapping("/plato/editar/{id}")
     public ModelAndView editarPlato(@PathVariable Long id, @ModelAttribute("plato") Plato plato) {
-        unidadVentaService.modificarPlato(id, plato); // o editarPlato
+        unidadVentaService.modificarPlato(id, plato);
         return new ModelAndView("redirect:/mi-unidad?platoEdited=true");
     }
 

@@ -52,7 +52,7 @@ public class FestivalService implements IFestivalService {
             }
         }
 
-        // 3. Ahora sí se puede borrar el festival
+        // 3. Ahora si se puede borrar el festival
         festivalRepository.deleteById(id);
         return true;
     }
@@ -69,7 +69,7 @@ public class FestivalService implements IFestivalService {
         return new ReporteVentaDTO(festival.getId(), festival.getNombre(), total, pedidos.size());
     }
 
-    // PUNTO 6 y 7 - Rentabilidad (ya lo tenías perfecto)
+    // PUNTO 6 y 7 - Rentabilidad
     @Override
     public RentabilidadNetaDTO getRentabilidadNeta(Long festivalId, Long unidadVentaId) {
         UnidadVenta unidad = unidadVentaRepository.findById(unidadVentaId).orElseThrow(() -> new RuntimeException("Unidad no encontrada"));
@@ -124,7 +124,7 @@ public class FestivalService implements IFestivalService {
                 .toList();
     }
 
-    // PUNTO 4 - Mayor Canon (ADMIN) - USA TU DTO
+    // PUNTO 4 - Mayor Canon (ADMIN)
     @Override
     public List<ReporteMayoresCanonDTO> getUnidadesConMayorCanon(Long festivalId, int topX) {
         List<UnidadVenta> unidades = unidadVentaRepository.findByFestivalId(festivalId);
@@ -134,6 +134,12 @@ public class FestivalService implements IFestivalService {
                 .limit(topX)
                 .toList();
     }
+
+    @Override
+    public Optional<Festival> findByIdWithUnidades(Long id) {
+        return festivalRepository.findByIdWithUnidades(id);
+    }
+
 
     // AGREGAR UNIDAD CON VALIDACIONES DE DUPLICADO Y SOLAPAMIENTO
     @Override

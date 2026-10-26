@@ -30,40 +30,43 @@ public class LiquidacionDeHaberService implements ILiquidacionDeHaberService {
     @Override
     public double calcularTotalACobrar(Long idPersonal, Long idUnidadVenta) {
         Personal p = personalRepo.findById(idPersonal).orElseThrow();
-        UnidadVenta uv = unidadVentaRepo.findById(idUnidadVenta).orElseThrow();
-        Costos costos = costosRepo.findAll().stream().findFirst().orElseThrow();
+        Costos costos = costosRepo.findAll().stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("Cargá tabla costos"));
 
-        // FIX 1: UnidadVenta tiene Set<Festival> festivales
-        long diasFest = 30;
-        if (uv.getFestivales() != null && !uv.getFestivales().isEmpty()) {
-            Festival fest = uv.getFestivales().iterator().next(); // tomamos el primero
-            if (fest.getFechaInicio() != null && fest.getFechaFin() != null) {
-                diasFest = ChronoUnit.DAYS.between(fest.getFechaInicio(), fest.getFechaFin());
-                if (diasFest <= 0) diasFest = 30;
+        // DIAS del festival
+        long dias = 3;
+        try {
+            UnidadVenta uv = unidadVentaRepo.findById(idUnidadVenta).orElse(null);
+            if (uv != null && uv.getFestivales() != null && !uv.getFestivales().isEmpty()) {
+                Festival fest = uv.getFestivales().iterator().next();
+                if (fest.getFechaInicio() != null && fest.getFechaFin() != null) {
+                    dias = ChronoUnit.DAYS.between(fest.getFechaInicio(), fest.getFechaFin());
+                    if (dias <= 0) dias = 3;
+                }
             }
-        }
+        } catch(Exception e){ dias = 3; }
 
-        int factor = (int)(diasFest / 15) + 1; // FORMULA QUE SE PIDE EN EL TP
+        int tramos = (int)(dias / 15) + 1;
+        BigDecimal sueldoBase = costos.getSueldoBase() != null ? costos.getSueldoBase() : BigDecimal.valueOf(100000);
 
-        BigDecimal base;
-        if (p instanceof Cocinero) {
-            // FIX 2: categoria es String, no Enum
-            Cocinero c = (Cocinero) p;
+        if (p instanceof Cocinero c) {
             String cat = c.getCategoria() != null ? c.getCategoria().toUpperCase() : "LAVAPLATOS";
             BigDecimal plus;
-            if (cat.equals("COCINERO")) plus = costos.getPlusCocinero();
-            else if (cat.contains("AYUDANTE")) plus = costos.getPlusAyudante();
-            else plus = costos.getPlusLavaplatos(); // default lavaplatos
+            if (cat.equals("COCINERO")) plus = costos.getPlusCocinero() != null ? costos.getPlusCocinero() : BigDecimal.valueOf(150000);
+            else if (cat.contains("AYUDANTE")) plus = costos.getPlusAyudante() != null ? costos.getPlusAyudante() : BigDecimal.valueOf(100000);
+            else plus = costos.getPlusLavaplatos() != null ? costos.getPlusLavaplatos() : BigDecimal.valueOf(50000);
 
-            base = costos.getSueldoBase().add(plus);
-        } else {
-            // CAJERO: sueldoBase + antigüedad * $5000
-            int anios = personalService.getAntiguedadAnios(idPersonal);
+            // (1) totalACobrarCocina=(int(dias/15)+1) * 50% *(sueldoBase+plusCategoria) - SIN antigüedad
+            return (sueldoBase.doubleValue() + plus.doubleValue()) * 0.5 * tramos;
+
+        } else { // Cajero
+            int anios = 0;
+            try { anios = personalService.getAntiguedadAnios(idPersonal); } catch(Exception e){ anios = 0; }
             BigDecimal antiguedad = BigDecimal.valueOf(anios * 5000L);
-            base = costos.getSueldoBase().add(antiguedad);
-        }
 
-        return base.doubleValue() * 0.5 * factor;
+            // (2) totalACobrarCajero=(int(dias/15)+1) * 50% *(sueldoBase+antigüedad) - SIN plus
+            return (sueldoBase.doubleValue() + antiguedad.doubleValue()) * 0.5 * tramos;
+        }
     }
 
     @Override
@@ -71,11 +74,14 @@ public class LiquidacionDeHaberService implements ILiquidacionDeHaberService {
         Personal p = personalRepo.findById(idPersonal).orElseThrow();
         UnidadVenta uv = unidadVentaRepo.findById(idUnidadVenta).orElseThrow();
 
+
         long dias = 30;
         if (uv.getFestivales() != null && !uv.getFestivales().isEmpty()) {
             Festival fest = uv.getFestivales().iterator().next();
             if (fest.getFechaInicio() != null && fest.getFechaFin() != null) {
-                dias = ChronoUnit.DAYS.between(fest.getFechaInicio(), fest.getFechaFin());
+                long diff = ChronoUnit.DAYS.between(fest.getFechaInicio(), fest.getFechaFin());
+                if(diff > 0 && diff <= 30) dias = diff;
+                else if(diff > 30) dias = 30;
             }
         }
 

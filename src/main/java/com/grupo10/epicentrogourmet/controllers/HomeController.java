@@ -44,7 +44,7 @@ public class HomeController {
             modelAndView.addObject("username", "anonymous");
         }
 
-        // --- ESTO ES LO QUE TE FALTABA ---
+
         boolean esAdmin = false;
         if (authentication != null) {
             esAdmin = authentication.getAuthorities().stream()

@@ -11,7 +11,7 @@
 
     <a th:href="@{/index}" class="btn btn-outline-warning btn-sm mb-4">← Volver al Home</a>
 
-    <!-- HEADER NUEVO - YA NO GRIS FEO -->
+
     <div class="card bg-black border-warning border-opacity-50 shadow mb-4">
         <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-start flex-wrap">
@@ -43,14 +43,14 @@
                 <span class="badge bg-secondary bg-opacity-25 border border-secondary border-opacity-25 text-light fw-normal py-2"
                       th:text="'⛺ Carpas: ' + ${unidad.cantidadCarpas}">⛺ Carpas: 2</span>
                 <span class="badge bg-secondary bg-opacity-25 border border-secondary border-opacity-25 text-light fw-normal py-2"
-                      th:text="'⏱️ Montaje: ' + ${unidad.tiempoMontajeMin} + ' min'">⏱️ Montaje: 30 min</span>
+                      th:text="'⏱ Montaje: ' + ${unidad.tiempoMontajeMin} + ' min'">⏱ Montaje: 30 min</span>
             </div>
         </div>
     </div>
 
     <div th:if="${param.platoSuccess}" class="alert alert-success">✅ Plato agregado correctamente</div>
     <div th:if="${param.platoDeleted}" class="alert alert-danger">🗑 Plato eliminado</div>
-    <div th:if="${param.platoEdited}" class="alert alert-warning">✏️ Plato modificado correctamente</div>
+    <div th:if="${param.platoEdited}" class="alert alert-warning">✏ Plato modificado correctamente</div>
 
     <div class="card bg-secondary bg-opacity-10 border-warning border-opacity-25">
         <div class="card-body p-3">
@@ -103,7 +103,8 @@
                     <td class="opacity-75" th:text="'$' + ${p.costoProduccion}">$800</td>
                     <td class="text-success" th:text="'$' + ${p.precioVenta - p.costoProduccion}">$700</td>
                     <td class="text-end">
-                        <a th:href="@{'/mi-unidad/plato/editar/' + ${p.id}}" class="btn btn-sm btn-outline-warning me-1">Editar</a>
+
+                        <a th:href="@{'/unidad-venta/plato/editar/' + ${p.id} + '?origen=mi-unidad'}" class="btn btn-outline-warning btn-sm">Editar</a>
                         <a th:href="@{'/mi-unidad/plato/eliminar/' + ${p.id}}" class="btn btn-sm btn-outline-danger"
                            onclick="return confirm('¿Eliminar este plato?')">Eliminar</a>
                     </td>

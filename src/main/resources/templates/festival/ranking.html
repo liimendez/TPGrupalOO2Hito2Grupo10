@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <title>Ranking Recaudación</title>
@@ -12,36 +12,39 @@
         <a th:href="@{'/festival/' + ${festival.id}}" class="btn btn-outline-warning btn-sm">← Volver al Festival</a>
     </div>
 </nav>
-
 <div class="container py-5">
-    <div class="card shadow-lg bg-secondary bg-opacity-10 border border-secondary border-opacity-25 rounded-3 mb-4">
+    <div class="card shadow-lg bg-black border border-warning border-opacity-25 rounded-3 mb-4">
         <div class="card-body p-4">
-            <h1 class="fw-bold text-warning mb-1">🏆 Ranking Recaudación</h1>
-            <p class="text-light opacity-75 mb-0" th:text="${festival.nombre} + ' - Temporada ' + ${festival.temporada}">epicentro food fest</p>
+            <h1 class="fw-bold text-warning mb-1">🏆 Ranking por Recaudación</h1>
+            <p class="text-light opacity-75 mb-0">Festival: <span th:text="${festival.nombre}">epicentro food fest</span> - Temporada <span th:text="${festival.temporada}">verano 2026</span> | Orden descendente por recaudación</p>
         </div>
     </div>
-
-    <div class="card shadow bg-black bg-opacity-50 border border-warning border-opacity-25 rounded-3">
+    <div class="card shadow bg-black border border-secondary border-opacity-25 rounded-3">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-dark table-hover mb-0 align-middle">
                     <thead class="bg-black text-warning">
                     <tr>
-                        <th class="ps-4">#</th>
-                        <th>Unidad</th>
-                        <th>Recaudación</th>
-                        <th>Pedidos</th>
+                        <th class="ps-4"># Posición</th>
+                        <th>Unidad (Nombre Comercial - Festival)</th>
+                        <th>Recaudación Total</th>
+                        <th>Cantidad Pedidos</th>
                     </tr>
                     </thead>
                     <tbody>
                     <tr th:each="fila, stat : ${ranking}">
-                        <td class="ps-4 fw-bold text-warning" th:text="${stat.index + 1}">1</td>
+                        <td class="ps-4">
+                            <span class="badge bg-warning text-dark fs-6" th:if="${stat.index == 0}">🥇 1</span>
+                            <span class="badge bg-secondary fs-6" th:if="${stat.index == 1}">🥈 2</span>
+                            <span class="badge bg-secondary fs-6" th:if="${stat.index == 2}">🥉 3</span>
+                            <span class="fw-bold text-warning" th:if="${stat.index > 2}" th:text="${stat.index + 1}">4</span>
+                        </td>
                         <td class="fw-bold text-light" th:text="${fila.nombre}">mc donalds - epicentro food fest</td>
                         <td class="text-warning fw-bold" th:text="'$ ' + ${#numbers.formatDecimal(fila.recaudacion, 1, 'POINT', 2, 'COMMA')}">$ 44.000,00</td>
-                        <td><span class="badge bg-secondary" th:text="${fila.pedidos} + ' pedidos'">2 pedidos</span></td>
+                        <td><span class="badge bg-dark border border-secondary" th:text="${fila.pedidos} + ' pedidos'">2 pedidos</span></td>
                     </tr>
                     <tr th:if="${ranking.isEmpty()}">
-                        <td colspan="4" class="text-center text-light opacity-50 py-4">No hay pedidos aún</td>
+                        <td colspan="4" class="text-center text-light opacity-50 py-4">No hay pedidos aún para generar ranking</td>
                     </tr>
                     </tbody>
                 </table>
