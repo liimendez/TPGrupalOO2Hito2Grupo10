@@ -10,5 +10,5 @@ public class RequestPedidoDTO {
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate fechaPedido;
     private Long unidadVentaId;
-    // Los detalles ae agregan  despues en otro form
+
 }

@@ -151,6 +151,15 @@ public class UnidadVentaService implements IUnidadVentaService {
         existente.setNombre(platoActualizado.getNombre());
         existente.setPrecioVenta(platoActualizado.getPrecioVenta());
         existente.setCostoProduccion(platoActualizado.getCostoProduccion());
+        existente.setImagenUrl(platoActualizado.getImagenUrl());
         platoRepository.save(existente);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<UnidadVenta> findByIdWithPlatos(Long id) {
+        return unidadVentaRepository.findByIdWithPlatos(id);
+    }
+
+
 }

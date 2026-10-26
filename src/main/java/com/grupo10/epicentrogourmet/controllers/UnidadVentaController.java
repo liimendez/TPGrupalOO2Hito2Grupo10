@@ -2,6 +2,7 @@ package com.grupo10.epicentrogourmet.controllers;
 
 import com.grupo10.epicentrogourmet.entities.Plato;
 import com.grupo10.epicentrogourmet.entities.UnidadVenta;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -11,7 +12,7 @@ import com.grupo10.epicentrogourmet.helpers.ViewRouteHelper;
 import com.grupo10.epicentrogourmet.services.IUnidadVentaService;
 import com.grupo10.epicentrogourmet.repositories.IPlatoRepository;
 import com.grupo10.epicentrogourmet.repositories.IUsuarioRepository;
-import org.springframework.ui.Model;
+import java.util.Comparator;
 
 @Controller
 @RequestMapping("/unidad-venta")
@@ -35,7 +36,7 @@ public class UnidadVentaController {
     }
 
     @PostMapping("/save")
-    public ModelAndView guardarUnidad(@ModelAttribute("unidadDTO") RequestUnidadVentaDTO dto, Model model) {
+    public ModelAndView guardarUnidad(@ModelAttribute("unidadDTO") RequestUnidadVentaDTO dto, org.springframework.ui.Model model) {
         if (usuarioRepository.findByCorreo(dto.getCorreo()).isPresent()) {
             ModelAndView mAV = new ModelAndView(ViewRouteHelper.UNIDAD_VENTA_FORM);
             mAV.addObject("unidadDTO", dto);
@@ -47,34 +48,79 @@ public class UnidadVentaController {
     }
 
     @GetMapping("/{id}")
-    @Transactional
     public ModelAndView detalle(@PathVariable Long id) {
-        UnidadVenta u = unidadVentaService.findById(id).orElseThrow();
-        u.getPlatosOfrecidos().size(); // Evita LazyInitializationException
+        UnidadVenta u = unidadVentaService.findByIdWithPlatos(id)
+                .orElseThrow(() -> new RuntimeException("Unidad no encontrada"));
+        var platosOrdenados = u.getPlatosOfrecidos().stream()
+                .sorted(Comparator.comparing(Plato::getId)).toList();
+
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean esResponsable = false;
+        boolean esAdmin = false;
+        boolean esCajero = false;
+        if (auth != null) {
+            esResponsable = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().contains("RESPONSABLE"));
+            esAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().contains("ADMIN"));
+            esCajero = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().contains("CAJERO") || a.getAuthority().contains("COCINERO"));
+        }
+
         ModelAndView mav = new ModelAndView("unidad-venta/detalle");
         mav.addObject("unidad", u);
-        mav.addObject("unidadVenta", u);
-        mav.addObject("platos", platoRepository.findByUnidadVenta_Id(id));
+        mav.addObject("platos", platosOrdenados);
+        mav.addObject("esResponsable", esResponsable);
+        mav.addObject("esAdmin", esAdmin);
+        mav.addObject("esCajero", esCajero);
         return mav;
     }
 
     @PostMapping("/{id}/agregar-plato")
-    @Transactional
-    public String agregarPlato(@PathVariable Long id,
-                               @RequestParam String nombre,
-                               @RequestParam double precioVenta,
-                               @RequestParam double costoProduccion) {
-        Plato p = new Plato();
-        p.setNombre(nombre);
-        p.setPrecioVenta(precioVenta);
-        p.setCostoProduccion(costoProduccion);
-        unidadVentaService.agregarPlato(id, p);
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public String agregarPlato(@PathVariable Long id, @RequestParam String nombre, @RequestParam double costoProduccion, @RequestParam double precioVenta, @RequestParam(required = false) String imagenUrl) {
+        Plato plato = new Plato();
+        plato.setNombre(nombre);
+        plato.setCostoProduccion(costoProduccion);
+        plato.setPrecioVenta(precioVenta);
+        plato.setImagenUrl(imagenUrl);
+        unidadVentaService.agregarPlato(id, plato);
         return "redirect:/unidad-venta/" + id;
     }
 
-    @GetMapping("/{id}/eliminar-plato/{platoId}")
+    @PostMapping("/{id}/eliminar-plato/{platoId}")
+    @PreAuthorize("hasRole('RESPONSABLE')")
     public String eliminarPlato(@PathVariable Long id, @PathVariable Long platoId) {
         unidadVentaService.eliminarPlato(platoId);
         return "redirect:/unidad-venta/" + id;
+    }
+
+    @GetMapping("/plato/editar/{platoId}")
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    @Transactional
+    public ModelAndView editarPlatoForm(@PathVariable Long platoId,
+                                        @RequestParam(value="origen", required=false) String origen) {
+        Plato plato = platoRepository.findByIdWithUnidad(platoId)
+                .orElseThrow(() -> new RuntimeException("Plato no encontrado " + platoId));
+        ModelAndView mav = new ModelAndView("unidad-venta/editar-plato");
+        mav.addObject("plato", plato);
+        mav.addObject("origen", origen);
+        return mav;
+    }
+
+    @PostMapping("/plato/editar/{platoId}")
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    @Transactional
+    public String editarPlato(@PathVariable Long platoId,
+                              @RequestParam String nombre,
+                              @RequestParam double costoProduccion,
+                              @RequestParam double precioVenta,
+                              @RequestParam(required = false) String imagenUrl,
+                              @RequestParam(value="origen", required=false) String origen) {
+        Plato actualizado = new Plato();
+        actualizado.setNombre(nombre);
+        actualizado.setCostoProduccion(costoProduccion);
+        actualizado.setPrecioVenta(precioVenta);
+        actualizado.setImagenUrl(imagenUrl);
+        unidadVentaService.modificarPlato(platoId, actualizado);
+        if("mi-unidad".equals(origen)) return "redirect:/mi-unidad?platoEdited=true";
+        return "redirect:/unidad-venta/" + platoRepository.findByIdWithUnidad(platoId).get().getUnidadVenta().getId();
     }
 }

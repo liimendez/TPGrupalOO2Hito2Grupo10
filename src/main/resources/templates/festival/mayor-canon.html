@@ -1,23 +1,49 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head><meta charset="UTF-8"><title>Mayor Canon</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"></head>
+<head>
+    <meta charset="UTF-8">
+    <title>Mayor Canon - Epicentro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
 <body class="bg-dark text-light">
-<div class="container py-5">
-    <h2 class="text-warning fw-bold">💰 Top <span th:text="${x}"></span> Mayor Canon - <span th:text="${festival.nombre}"></span></h2>
-    <div class="card bg-black border border-warning border-opacity-25 mt-4">
-        <table class="table table-dark table-striped mb-0">
-            <thead><tr><th>#</th><th>Nombre Comercial</th><th>Código</th><th>Tipo</th><th>Canon</th></tr></thead>
-            <tbody>
-            <tr th:each="r, iter : ${reporte}">
-                <td th:text="${iter.index + 1}"></td>
-                <td class="text-warning fw-bold" th:text="${r.nombreComercial}"></td>
-                <td th:text="${r.codigoUnico}"></td>
-                <td><span class="badge bg-secondary" th:text="${r.tipoUnidad}"></span></td>
-                <td>$ <span th:text="${#numbers.formatDecimal(r.canon,1,2)}"></span></td>
-            </tr>
-            </tbody>
-        </table>
+<nav class="navbar navbar-dark bg-black border-bottom border-warning border-opacity-25">
+    <div class="container">
+        <a class="navbar-brand fw-bold text-warning" th:href="@{/index}">🍷 Epicentro Gourmet</a>
+        <span class="badge bg-warning text-dark">ADMIN PANEL</span>
     </div>
-    <a th:href="@{'/festival/' + ${festival.id}}" class="btn btn-warning mt-4">← Volver al Detalle</a>
-</div></body></html>
+</nav>
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-warning fw-bold mb-1">💰 Top <span th:text="${x}">3</span> Mayor Canon</h2>
+            <p class="text-light opacity-75 small mb-0">Festival: <span class="fw-bold text-light" th:text="${festival.nombre}">epicentro food fest </p>
+        </div>
+        <a th:href="@{'/festival/' + ${festival.id}}" class="btn btn-outline-warning btn-sm">← Volver al Festival</a>
+    </div>
+    <div class="card bg-black border border-secondary border-opacity-25 shadow">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0 align-middle">
+                <thead class="text-warning">
+                <tr>
+                    <th class="ps-4">#</th>
+                    <th>Nombre Comercial</th>
+                    <th>Código</th>
+                    <th>Tipo Unidad</th>
+                    <th>Canon</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="r, iter : ${reporte}">
+                    <td class="ps-4 fw-bold text-warning" th:text="${iter.index + 1}">1</td>
+                    <td class="fw-bold text-light" th:text="${r.nombreComercial}">mc donalds</td>
+                    <td><code class="text-light" th:text="${r.codigoUnico}">MC 8679004</code></td>
+                    <td><span class="badge bg-secondary" th:text="${r.tipoUnidad}">FoodTruck</span></td>
+                    <td class="text-warning fw-bold">$ <span th:text="${#numbers.formatDecimal(r.canon,1,'POINT',2,'COMMA')}">6.000,00</span></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

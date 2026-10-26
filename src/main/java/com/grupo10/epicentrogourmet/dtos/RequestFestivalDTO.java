@@ -16,4 +16,6 @@ public class RequestFestivalDTO {
     private LocalDate fechaFin;
 
     private Long costosId; // opcional
+
+    private String imagenUrl; // NUEVO para uv y otros
 }

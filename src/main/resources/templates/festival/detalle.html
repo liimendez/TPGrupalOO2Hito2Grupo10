@@ -2,87 +2,77 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Detalle Festival</title>
+    <title th:text="${festival.nombre} + ' - Epicentro Gourmet'">Festival</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-dark text-light">
-<nav class="navbar navbar-dark bg-black shadow-sm border-bottom border-warning border-opacity-25">
-    <div class="container">
-        <a class="navbar-brand fw-bold text-warning" th:href="@{/index}">🍷 Epicentro Gourmet</a>
-        <a th:href="@{/index}" class="btn btn-outline-warning btn-sm">← Volver al Inicio</a>
+<nav class="navbar navbar-dark bg-black border-bottom border-warning border-opacity-25">
+    <div class="container d-flex justify-content-between">
+        <a class="navbar-brand fw-bold text-warning" href="/index">🍷 Epicentro Gourmet</a>
+        <div class="d-flex gap-2">
+            <span th:if="${esAdmin}" class="badge bg-warning text-dark rounded-pill">ADMIN</span>
+            <span th:if="${esResponsable}" class="badge bg-info text-dark rounded-pill">RESPONSABLE</span>
+            <a href="/index" class="btn btn-outline-warning btn-sm rounded-pill">Volver al Inicio</a>
+        </div>
     </div>
 </nav>
-<div class="container py-5">
-    <!-- Header Festival - CON BOTONES ARRIBA AHORA -->
-    <div class="card shadow-lg bg-secondary bg-opacity-10 border border-secondary border-opacity-25 rounded-3 mb-4">
-        <div class="card-body p-4">
-            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
-                <div>
-                    <h1 class="fw-bold text-warning mb-1" th:text="${festival.nombre}">epicentro food fest</h1>
-                    <p class="text-light opacity-75 mb-0">
-                        Temporada: <span class="text-warning" th:text="${festival.temporada}">verano 2026</span> |
-                        <span th:text="${festival.fechaInicio}">2026-11-15</span> al <span th:text="${festival.fechaFin}">2026-11-17</span>
-                    </p>
-                </div>
-                <div class="d-flex gap-2 flex-wrap">
-                    <a th:href="@{'/festival/' + ${festival.id} + '/ranking'}" class="btn btn-outline-warning btn-sm fw-bold">🏆 Ranking Recaudación</a>
-                    <a th:href="@{'/festival/' + ${festival.id} + '/mayor-canon?x=3'}" class="btn btn-warning btn-sm fw-bold">💰 Top 3 Mayor Canon</a>
-                </div>
-            </div>
-            <!-- ALERTS -->
-            <div th:if="${param.unidadAgregada}" class="alert alert-success mt-3 mb-0 py-2">¡Unidad agregada al festival! 🎉</div>
-            <div th:if="${param.errorDuplicado}" class="alert alert-danger mt-3 mb-0 py-2">❌ Error: Esa unidad ya está en este festival, no se puede duplicar</div>
-            <div th:if="${param.errorSolapamiento}" class="alert alert-danger mt-3 mb-0 py-2">❌ Error de solapamiento: Esta unidad ya está ocupada en otro festival en esas fechas</div>
-            <div th:if="${param.mensaje}" class="alert alert-warning mt-2 mb-0 py-2 small" th:text="${param.mensaje}"></div>
+
+<div class="container py-4">
+    <div th:if="${festival.imagenUrl != null && !festival.imagenUrl.isEmpty()}" class="mb-4">
+        <img th:src="${festival.imagenUrl}" style="width:100%; height:280px; object-fit:cover; border-radius:20px; border:2px solid #ffc107;">
+    </div>
+
+    <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+        <div>
+            <h1 class="text-warning fw-bold fst-italic" style="font-family: serif;" th:text="${festival.nombre}">epicentro food fest</h1>
+            <span class="badge bg-secondary bg-opacity-25 rounded-pill px-3 py-2 small" th:text="'Temporada: ' + ${festival.temporada}">Temporada</span>
+            <small class="text-white-50 ms-2" th:text="${festival.fechaInicio} + ' → ' + ${festival.fechaFin}">fechas</small>
+        </div>
+        <div th:if="${esAdmin}" class="d-flex gap-2">
+            <a th:href="@{'/festival/' + ${festival.id} + '/ranking'}" class="btn btn-outline-warning btn-sm rounded-pill px-3">Ranking</a>
+            <a th:href="@{'/festival/' + ${festival.id} + '/mayor-canon?x=3'}" class="btn btn-warning btn-sm rounded-pill fw-bold text-dark px-3">Top 3 Mayor Canon</a>
         </div>
     </div>
-    <div class="row g-4">
-        <!-- Form Agregar -->
-        <div class="col-md-5">
-            <div class="card shadow bg-black bg-opacity-50 border border-warning border-opacity-25 rounded-3 h-100">
-                <div class="card-header bg-black text-warning fw-bold border-bottom border-warning border-opacity-25">
-                    Agregar Unidad de Venta
+
+    <!-- BLOQUE ADMIN - SOLO CATALOGO, SIN GESTION -->
+    <div th:if="${esAdmin}" class="card rounded-4 overflow-hidden shadow-lg" style="background: #2c2c2c; border: 1px solid #3d3d3d;">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span class="fw-bold">Unidades en este festival: <span class="badge bg-warning text-dark rounded-pill" th:text="${unidadesParaMostrar.size()}">2</span></span>
+            <small class="text-white-50" th:text="'ID: ' + ${festival.id}">ID: 1</small>
+        </div>
+        <div th:each="uv : ${unidadesParaMostrar}" class="d-flex justify-content-between align-items-center p-3 border-bottom border-secondary border-opacity-25">
+            <div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-warning fw-bold" th:text="${uv.nombreComercial}">burger king</span>
+                    <span class="badge border border-warning text-warning rounded-pill small px-2" th:text="${uv.class.simpleName}">FoodTruck</span>
                 </div>
-                <div class="card-body">
-                    <form th:action="@{'/festival/' + ${festival.id} + '/agregar-unidad'}" method="post">
-                        <div class="mb-3">
-                            <label class="form-label text-light opacity-75">Seleccioná una unidad</label>
-                            <select name="unidadVentaId" class="form-select bg-dark text-light border-secondary" required>
-                                <option value="">-- Seleccioná una unidad --</option>
-                                <option th:each="u : ${todasUnidades}" th:value="${u.id}" th:text="${u.nombreComercial} + ' (' + ${u.codigoUnico} + ')'"></option>
-                            </select>
-                        </div>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-warning fw-bold">Agregar al Festival</button>
-                        </div>
-                    </form>
-                </div>
+                <div class="small mt-1"><span class="text-danger opacity-75" style="font-size: 0.75rem;" th:text="${uv.codigoUnico}">BUR7053006</span></div>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <small class="text-white-50">Activo</small>
+                <a th:href="@{'/unidad-venta/' + ${uv.id}}" class="btn btn-sm btn-warning rounded-pill px-3 fw-bold text-dark">Ver Catálogo</a>
             </div>
         </div>
-        <!-- Lista Unidades -->
-        <div class="col-md-7">
-            <div class="card shadow bg-secondary bg-opacity-10 border border-secondary border-opacity-25 rounded-3 h-100">
-                <div class="card-header bg-black text-warning fw-bold border-bottom border-warning border-opacity-25">
-                    Unidades en este festival: <span class="badge bg-warning text-dark ms-2" th:text="${festival.unidadesVenta.size()}">2</span>
-                </div>
-                <div class="card-body">
-                    <div th:if="${festival.unidadesVenta.isEmpty()}" class="text-center text-light opacity-50 py-4">
-                        Aún no hay unidades asignadas
-                    </div>
-                    <ul class="list-group list-group-flush" th:if="${!festival.unidadesVenta.isEmpty()}">
-                        <li class="list-group-item bg-dark text-light border-secondary d-flex justify-content-between align-items-center" th:each="u : ${festival.unidadesVenta}">
-                            <div>
-                                <a th:href="@{'/unidad-venta/' + ${u.id}}" class="fw-bold text-warning text-decoration-none" th:text="${u.nombreComercial}" title="Click para agregar platos"></a>
-                                <small class="text-light opacity-50 ms-2" th:text="${u.codigoUnico}"></small>
-                            </div>
-                            <span class="badge bg-secondary" th:text="${u.class.simpleName}">FoodTruck</span>
-                        </li>
-                    </ul>
-                </div>
+    </div>
+
+    <!-- BLOQUE RESPONSABLE -->
+    <div th:if="${esResponsable}">
+        <div th:if="${yaAnotado}" class="card rounded-4 overflow-hidden shadow-lg" style="background: #2c2c2c; border: 1px solid #ffc107;">
+            <div class="card-header text-warning fw-bold">Mi Unidad en este festival</div>
+            <div class="p-3 d-flex justify-content-between align-items-center">
+                <span class="text-warning fw-bold" th:text="${miUnidad.nombreComercial}">mc donalds</span>
+                <a th:href="@{/mi-unidad}" class="btn btn-warning rounded-pill fw-bold px-4">Administrar Platos</a>
             </div>
+        </div>
+        <div th:if="${!yaAnotado}" class="card rounded-4 p-4 text-center" style="background: #1a1a1a; border: 1px dashed #ffc107;">
+            <h5 class="text-warning">Tu unidad <span th:text="${miUnidad?.nombreComercial}">mc donalds</span> no está en este festival</h5>
+            <p class="text-white-50 small">¿Querés anotarte a <span th:text="${festival.nombre}"></span>?</p>
+            <form th:action="@{'/festival/' + ${festival.id} + '/agregar-unidad'}" method="post">
+                <input type="hidden" name="unidadVentaId" th:value="${miUnidad?.id}" />
+                <button class="btn btn-warning rounded-pill fw-bold w-100 py-2">📝 Anotar mi unidad a este festival</button>
+            </form>
         </div>
     </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

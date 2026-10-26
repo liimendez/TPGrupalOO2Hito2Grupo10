@@ -2,7 +2,7 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Nuevo Festival - Epicentro Gourmet</title>
+    <title th:text="${esEdicion} ? 'Editar Festival - Epicentro Gourmet' : 'Nuevo Festival - Epicentro Gourmet'">Festival - Epicentro Gourmet</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-dark text-light">
@@ -10,29 +10,42 @@
 <nav class="navbar navbar-dark bg-black shadow-sm border-bottom border-warning border-opacity-25">
     <div class="container">
         <a class="navbar-brand fw-bold text-warning" th:href="@{/index}">🍷 Epicentro Gourmet</a>
-        <a th:href="@{/index}" class="btn btn-outline-warning btn-sm">Volver al Inicio</a>
+        <a th:href="@{/index}" class="btn btn-outline-warning btn-sm rounded-pill">← Volver al Inicio</a>
     </div>
 </nav>
 
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-md-7 col-lg-6">
-            <div class="card shadow-lg bg-secondary bg-opacity-10 border border-secondary border-opacity-25 rounded-3">
-                <div class="card-header bg-black border-bottom border-warning border-opacity-25 py-3">
-                    <h4 class="mb-0 fw-bold text-warning">🍽 Registrar Nuevo Festival</h4>
-                    <small class="text-light opacity-75">Completa los datos del festival gastronómico</small>
+            <div class="card shadow-lg rounded-4 overflow-hidden" style="background: #2c2c2c; border: 1px solid #3d3d3d;">
+                <div class="card-header bg-black py-3" style="border-bottom: 1px solid rgba(255,193,7,0.25);">
+                    <h4 class="mb-0 fw-bold text-warning" th:text="${esEdicion} ? '✏ Editar Festival' : '🍽 Registrar Nuevo Festival'">🍽 Registrar Nuevo Festival</h4>
+                    <small class="text-light opacity-75" th:text="${esEdicion} ? 'Modificá los datos del festival' : 'Completa los datos del festival gastronómico'">Completa los datos</small>
                 </div>
                 <div class="card-body p-4">
-                    <form th:action="@{/festival/save}" th:object="${festivalDTO}" method="post">
+                    <form th:action="${esEdicion} ? @{'/festival/editar/' + ${festivalId}} : @{/festival/save}" th:object="${festivalDTO}" method="post">
 
                         <div class="mb-3">
                             <label class="form-label text-warning fw-semibold">Nombre del Festival</label>
-                            <input type="text" th:field="*{nombre}" class="form-control bg-dark text-light border-secondary" placeholder="Ej: epicentro food fest" required>
+                            <input type="text" th:field="*{nombre}" class="form-control bg-dark text-light border-secondary" placeholder="Ej: Oktober Fest" required>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label text-warning fw-semibold">Temporada</label>
                             <input type="text" th:field="*{temporada}" class="form-control bg-dark text-light border-secondary" placeholder="Ej: Verano 2026" required>
+                        </div>
+
+                        <!-- NUEVO: Imagen -->
+                        <div class="mb-3">
+                            <label class="form-label text-warning fw-semibold">Imagen del Festival (URL)</label>
+                            <input type="text" th:field="*{imagenUrl}" id="imagenUrl" class="form-control bg-dark text-light border-secondary" placeholder="https://... o https://images.unsplash.com/photo-...">
+                            <small class="text-white-50">Ej Oktoberfest: pegá una URL de cerveza. Si lo dejás vacío usa imagen por defecto.</small>
+                            <div class="mt-2" th:if="*{imagenUrl != null && !imagenUrl.isEmpty()}">
+                                <img th:src="*{imagenUrl}" id="preview" style="width:100%; height:160px; object-fit:cover; border-radius:12px; border:1px solid #ffc107;" alt="Preview">
+                            </div>
+                            <div class="mt-2" th:if="*{imagenUrl == null || imagenUrl.isEmpty()}">
+                                <img id="preview" style="display:none; width:100%; height:160px; object-fit:cover; border-radius:12px; border:1px solid #ffc107;">
+                            </div>
                         </div>
 
                         <div class="row">
@@ -47,7 +60,10 @@
                         </div>
 
                         <div class="d-grid mt-4">
-                            <button type="submit" class="btn btn-warning fw-bold py-2 shadow-sm">Guardar Festival</button>
+                            <button type="submit" class="btn btn-warning fw-bold py-2 shadow-sm rounded-pill" th:text="${esEdicion} ? 'Guardar Cambios' : 'Guardar Festival'">Guardar Festival</button>
+                        </div>
+                        <div class="d-grid mt-2">
+                            <a th:href="@{/index}" class="btn btn-outline-light btn-sm rounded-pill">Cancelar</a>
                         </div>
                     </form>
                 </div>
@@ -60,6 +76,18 @@
     </div>
 </div>
 
+<script>
+
+    document.getElementById('imagenUrl').addEventListener('input', function(e){
+        const img = document.getElementById('preview');
+        if(e.target.value){
+            img.src = e.target.value;
+            img.style.display = 'block';
+        } else {
+            img.style.display = 'none';
+        }
+    });
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -1,8 +1,10 @@
 package com.grupo10.epicentrogourmet.controllers;
 
 import com.grupo10.epicentrogourmet.entities.Usuario;
+import com.grupo10.epicentrogourmet.helpers.ViewRouteHelper;
 import com.grupo10.epicentrogourmet.services.IUsuarioService;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -17,33 +19,40 @@ public class UserController {
 
     @GetMapping("/login")
     public String login() {
-        return "user/login";
+        return ViewRouteHelper.USER_LOGIN;
     }
 
     @GetMapping("/loginsuccess")
     public String loginSuccess() {
-        return "redirect:/";
+        return "redirect:/index";
     }
 
     @GetMapping("/usuarios/lista")
-    public ModelAndView lista() {
-        ModelAndView mav = new ModelAndView("user/lista");
-        mav.addObject("usuarios", usuarioService.getAll()); // <- getAll
-        return mav;
+    public String listaUsuarios(Model model) {
+        var responsables = usuarioService.getAll().stream()
+                .filter(u -> u.getRol() != null
+                        && u.getRol().getRol() != null
+                        && u.getRol().getRol().name().equals("RESPONSABLE"))
+                .toList();
+        model.addAttribute("usuarios", responsables);
+        return "user/lista";
     }
 
     @GetMapping("/usuarios/eliminar/{id}")
     public ModelAndView eliminar(@PathVariable Long id) {
         if (id == 1) {
             ModelAndView mav = new ModelAndView("user/lista");
-            mav.addObject("usuarios", usuarioService.getAll()); // <- getAll
+            mav.addObject("usuarios", usuarioService.getAll().stream()
+                    .filter(u -> !u.getId().equals(1L)
+                            && u.getRol() != null
+                            && u.getRol().getRol().name().equals("RESPONSABLE")).toList());
             mav.addObject("error", "No podés dar de baja al admin principal");
             return mav;
         }
         Usuario u = usuarioService.findById(id).orElseThrow();
         u.setActivo(false);
         usuarioService.insertOrUpdate(u);
-        return new ModelAndView("redirect:/usuarios/lista?eliminado=true");
+        return new ModelAndView("redirect:/usuarios/lista");
     }
 
     @GetMapping("/usuarios/alta/{id}")
@@ -51,29 +60,21 @@ public class UserController {
         Usuario u = usuarioService.findById(id).orElseThrow();
         u.setActivo(true);
         usuarioService.insertOrUpdate(u);
-        return new ModelAndView("redirect:/usuarios/lista?alta=true");
+        return new ModelAndView("redirect:/usuarios/lista");
     }
 
     @GetMapping("/usuarios/editar/{id}")
     public ModelAndView editarForm(@PathVariable Long id) {
-        Usuario u = usuarioService.findById(id).orElseThrow();
         ModelAndView mav = new ModelAndView("user/editar");
-        mav.addObject("usuario", u);
+        mav.addObject("usuario", usuarioService.findById(id).orElseThrow());
         return mav;
     }
 
     @PostMapping("/usuarios/editar/{id}")
     public ModelAndView editarSave(@PathVariable Long id, @RequestParam String correo) {
         Usuario u = usuarioService.findById(id).orElseThrow();
-        Usuario otro = usuarioService.findByCorreo(correo);
-        if (otro != null && !otro.getId().equals(id)) {
-            ModelAndView mav = new ModelAndView("user/editar");
-            mav.addObject("usuario", u);
-            mav.addObject("error", "No se puede usar ese correo, está en uso: " + correo);
-            return mav;
-        }
         u.setCorreo(correo);
         usuarioService.insertOrUpdate(u);
-        return new ModelAndView("redirect:/usuarios/lista?modificado=true");
+        return new ModelAndView("redirect:/usuarios/lista");
     }
 }

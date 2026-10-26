@@ -20,6 +20,9 @@ public class Plato {
 	private double precioVenta;
 	private double costoProduccion;
 
+	@Column(length = 500)
+	private String imagenUrl;
+
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "unidad_venta_id")
 	private UnidadVenta unidadVenta;

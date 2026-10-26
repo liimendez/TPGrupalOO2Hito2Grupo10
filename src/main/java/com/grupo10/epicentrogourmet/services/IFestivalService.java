@@ -23,4 +23,7 @@ public interface IFestivalService {
     List<ReporteVentaDTO> getRankingUnidadesPorRecaudacion(Long festivalId);
     List<ReporteMayoresCanonDTO> getUnidadesConMayorCanon(Long festivalId, int topX);
 
+    Optional<Festival> findByIdWithUnidades(Long id);
+
+
 }

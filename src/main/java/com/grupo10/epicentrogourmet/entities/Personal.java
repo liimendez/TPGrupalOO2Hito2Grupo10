@@ -10,7 +10,7 @@ import java.time.LocalDate;
 @Getter @Setter @NoArgsConstructor
 @Table(name = "personal")
 @SQLDelete(sql = "UPDATE personal SET activo = false WHERE id = ?")
-@SQLRestriction("activo = true")
+
 public abstract class Personal {
 	@Id @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;

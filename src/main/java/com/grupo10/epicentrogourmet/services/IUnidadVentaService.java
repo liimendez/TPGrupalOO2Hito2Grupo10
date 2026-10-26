@@ -26,6 +26,6 @@ public interface IUnidadVentaService {
     void eliminarPlato(Long platoId);
     Plato findPlatoById(Long id);
     void modificarPlato(Long id, Plato platoActualizado);
-
+    Optional<UnidadVenta> findByIdWithPlatos(Long id);
 
 }
