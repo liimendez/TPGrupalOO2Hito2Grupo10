@@ -19,6 +19,8 @@
         .badge-tipo{background:#111;color:#facc15;border:2px solid #facc15;font-weight:800}
         .btn-ver{background:#facc15;color:#111;border:2px solid #111;font-weight:800;box-shadow:0 0 15px rgba(250,204,21,.6)}
         .btn-ver:hover{background:#fff;color:#111;border-color:#facc15;box-shadow:0 0 25px rgba(250,204,21,.8)}
+        .btn-reporte{background:#111;color:#facc15;border:2px solid #facc15;font-weight:800}
+        .btn-reporte:hover{background:#facc15;color:#111;border-color:#111}
     </style>
 </head>
 <body>
@@ -39,7 +41,14 @@
                     <td class="fw-bold" th:text="${u.nombreComercial}">mc donalds</td>
                     <td><span class="badge badge-sup rounded-pill px-3" th:text="${u.superficieM2} + ' m²'">12.0 m²</span></td>
                     <td><span class="badge badge-tipo rounded-pill px-3 py-2" th:text="${u.class.simpleName}">FoodTruck</span></td>
-                    <td class="text-end"><a th:href="@{/responsable/canon/{id}(id=${u.id})}" class="btn btn-ver btn-sm rounded-pill px-4 py-2"><i class="bi bi-calculator me-1"></i> Ver Canon</a></td>
+                    <td class="text-end">
+                        <a th:href="@{/pedido/reporte/unidad/{id}(id=${u.id})}" class="btn btn-reporte btn-sm rounded-pill px-3 py-2 me-2">
+                            <i class="bi bi-graph-up-arrow me-1"></i> Reporte
+                        </a>
+                        <a th:href="@{/responsable/canon/{id}(id=${u.id})}" class="btn btn-ver btn-sm rounded-pill px-4 py-2">
+                            <i class="bi bi-calculator me-1"></i> Ver Canon
+                        </a>
+                    </td>
                 </tr>
                 </tbody>
             </table>
