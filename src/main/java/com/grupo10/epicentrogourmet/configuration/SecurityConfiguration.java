@@ -35,12 +35,12 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/", "/index","/login", "/loginprocess", "/loginsuccess",
                             "/css/**", "/js/**", "/imgs/**",
-                            "/vendor/**", "/api/v1/**", "/error/**").permitAll();
+                            "/vendor/**", "/api/v1/**", "/error/**",
+                            "/unidad-venta/new", "/unidad-venta/save").permitAll();
 
                     // SOLO ADMIN puede crear/editar/eliminar festivales y ver usuarios
                     auth.requestMatchers("/festival/new", "/festival/editar/**", "/festival/eliminar/**",
-                            "/festival/save", "/usuarios/**",
-                            "/unidad-venta/new", "/unidad-venta/save").hasAnyAuthority("ADMIN", "ROLE_ADMIN");
+                            "/festival/save", "/usuarios/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN");
 
                     // RESPONSABLE y ADMIN pueden ver su unidad y administrar platos
                     auth.requestMatchers("/mi-unidad/**", "/unidad-venta/detalle/**").hasAnyAuthority("RESPONSABLE", "ROLE_RESPONSABLE", "ADMIN", "ROLE_ADMIN");
