@@ -27,7 +27,10 @@
             <h1 class="h3 fw-bold text-warning mb-1" style="text-shadow:0 0 10px rgba(250,204,21,.3)">Festivales Gastronómicos 🍽</h1>
             <p class="text-light opacity-75 small mb-0">Listado de festivales registrados - Solo ADMIN puede editar/baja</p>
         </div>
-        <div class="d-flex gap-2 flex-wrap">
+        <div class="d-flex gap-2 flex-wrap align-items-center">
+            <a th:if="${username == 'anonymous'}" class="btn btn-warning btn-sm fw-bold text-dark px-3" th:href="@{/unidad-venta/new}">
+                Registrar Unidad de Venta
+            </a>
             <div sec:authorize="hasRole('ADMIN')" class="d-flex gap-2">
                 <a href="/usuarios/lista" class="btn btn-outline-light btn-sm">Usuarios</a>
                 <a href="/festival/new" class="btn btn-warning btn-sm fw-bold text-dark">Registrar Festival</a>
