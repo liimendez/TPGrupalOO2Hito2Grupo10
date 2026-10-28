@@ -1,6 +1,8 @@
 package com.grupo10.epicentrogourmet.repositories;
 
 import com.grupo10.epicentrogourmet.entities.Pedido;
+
+import com.grupo10.epicentrogourmet.entities.UnidadVenta;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,6 +14,7 @@ import java.util.Optional;
 
 @Repository("pedidoRepository")
 public interface IPedidoRepository extends JpaRepository<Pedido, Serializable> {
+
     Optional<Pedido> findById(Long id);
     List<Pedido> findByUnidadVentaId(Long unidadVentaId);
 
@@ -21,7 +24,13 @@ public interface IPedidoRepository extends JpaRepository<Pedido, Serializable> {
     @Query("SELECT p FROM Pedido p JOIN p.unidadVenta uv JOIN uv.festivales f WHERE f.id = :festivalId AND uv.id = :unidadVentaId")
     List<Pedido> findByFestivalIdAndUnidadVentaId(@Param("festivalId") Long festivalId, @Param("unidadVentaId") Long unidadVentaId);
 
-
     @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.detalles d LEFT JOIN FETCH d.plato WHERE p.unidadVenta.id IN (SELECT uv.id FROM UnidadVenta uv JOIN uv.festivales f WHERE f.id = :festivalId)")
     List<Pedido> findByFestivalIdConDetalles(@Param("festivalId") Long festivalId);
+
+    @Query("SELECT DISTINCT p FROM Pedido p " +
+            "INNER JOIN FETCH p.unidadVenta uv " +
+            "INNER JOIN FETCH p.detalles d " +
+            "INNER JOIN FETCH d.plato pl " +
+            "WHERE uv = :unidadVenta")
+    List<Pedido> generarReportePorUnidadVenta(@Param("unidadVenta") UnidadVenta unidadVenta);
 }
