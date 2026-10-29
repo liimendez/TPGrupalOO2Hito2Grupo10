@@ -21,6 +21,7 @@ public class ViewRouteHelper {
     public static final String EMPLEADO_EDITAR = "empleados/editarEmpleado";
     public static final String EMPLEADO_LIQUIDACION = "empleados/liquidacion";
     public static final String EMPLEADO_HISTORIAL = "empleados/historialLiquidaciones";
+    public static final String EMPLEADO_MI_INFORMACION = "empleados/mi-informacion";
 
     // Redirects -
     public final static String ROUTE = "/index";

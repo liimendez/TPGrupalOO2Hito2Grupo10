@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Mi Información - Epicentro Gourmet</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background: #1a1d23 !important; }
+        .card-custom { box-shadow: 0 0 30px rgba(0,0,0,.4), 0 0 0 1px rgba(250,204,21,.15); background: #2c2c2c; border: 1px solid #3d3d3d; }
+    </style>
+</head>
+<body class="bg-dark text-light">
+
+<!-- Navbar -->
+<nav class="navbar navbar-dark bg-black shadow-sm border-bottom border-warning border-2">
+    <div class="container">
+        <a class="navbar-brand fw-bold text-warning" th:href="@{/index}">🍷 Epicentro Gourmet</a>
+        <div>
+            <span class="text-warning me-3 fw-bold" sec:authentication="name"></span>
+            <form th:action="@{/logout}" method="post" class="d-inline">
+                <button type="submit" class="btn btn-outline-danger btn-sm">Cerrar Sesión</button>
+            </form>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-5">
+
+    <!-- Encabezado  -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h1 class="h3 fw-bold text-warning mb-1" style="text-shadow:0 0 10px rgba(250,204,21,.3)">Información de Empleado 👤</h1>
+            <p class="text-light opacity-75 small mb-0">Consulta tus datos personales, actividad actual e historial laboral.</p>
+        </div>
+        <a th:href="@{/index}" class="btn btn-warning fw-bold text-dark shadow-sm">
+            ← Volver al Inicio
+        </a>
+    </div>
+
+    <!-- Datos Personales -->
+    <div class="card card-custom shadow-lg rounded-4 overflow-hidden mb-4">
+        <div class="card-header bg-black text-warning fw-bold py-3 px-4" style="border-bottom: 2px solid #facc15;">
+            <i class="bi bi-person-badge me-2"></i>Datos Personales
+        </div>
+        <div class="card-body p-4 text-light">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <span class="text-white-50 small d-block">Nombre y Apellido</span>
+                    <strong class="text-warning fs-5" th:text="${empleado.nombre + ' ' + empleado.apellido}"></strong>
+                </div>
+                <div class="col-md-3">
+                    <span class="text-white-50 small d-block">DNI</span>
+                    <strong class="text-light fs-5" th:text="${empleado.dni}"></strong>
+                </div>
+                <div class="col-md-3">
+                    <span class="text-white-50 small d-block">Fecha de Ingreso</span>
+                    <strong class="text-light fs-5" th:text="${empleado.fechaIngreso}"></strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actividad Actual (Unidad y Festival) -->
+    <div class="card card-custom shadow-lg rounded-4 overflow-hidden mb-4">
+        <div class="card-header bg-black text-warning fw-bold py-3 px-4 d-flex justify-content-between align-items-center" style="border-bottom: 2px solid #facc15;">
+            <span><i class="bi bi-shop me-2"></i>Unidad de Venta y Festival Actual</span>
+            <span class="badge bg-success text-dark fw-bold">Activo</span>
+        </div>
+        <div class="card-body p-4">
+            <div th:if="${unidadActual != null}">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <span class="text-white-50 small d-block">Nombre Comercial</span>
+                        <h4 class="text-warning fw-bold mb-0" th:text="${unidadActual.nombreComercial}"></h4>
+                    </div>
+                    <div class="col-md-3">
+                        <span class="text-white-50 small d-block">Código Único</span>
+                        <span class="text-light fw-bold" th:text="${unidadActual.codigoUnico}"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <span class="text-white-50 small d-block">Superficie</span>
+                        <span class="text-light fw-bold" th:text="${unidadActual.superficieM2 + ' m²'}"></span>
+                    </div>
+                </div>
+
+                <h6 class="text-warning border-bottom border-secondary pb-2 mb-3">Festival de la Unidad actual</h6>
+                <div th:if="${festivalesActuales != null and not #sets.isEmpty(festivalesActuales)}" class="table-responsive">
+                    <table class="table table-dark table-hover align-middle mb-0">
+                        <thead class="bg-black text-warning">
+                        <tr>
+                            <th class="py-2 px-3 text-warning">Nombre del Festival</th>
+                            <th class="py-2 px-3 text-warning">Temporada</th>
+                            <th class="py-2 px-3 text-warning">Fecha Inicio</th>
+                            <th class="py-2 px-3 text-warning">Fecha Fin</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="fest : ${festivalesActuales}">
+                            <td class="px-3 text-white" th:text="${fest.nombre}">Festival</td>
+                            <td class="px-3 text-white" th:text="${fest.temporada}">Temporada</td>
+                            <td class="px-3 text-white" th:text="${fest.fechaInicio}">Fecha Inicio</td>
+                            <td class="px-3 text-white" th:text="${fest.fechaFin}">Fecha Fin</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div th:if="${festivalesActuales == null or #sets.isEmpty(festivalesActuales)}">
+                    <p class="text-white-50 mb-0">No hay Festival activo asociado a tu Unidad actual.</p>
+                </div>
+            </div>
+
+            <div th:if="${unidadActual == null}">
+                <p class="text-white-50 mb-0">Actualmente no tienes una unidad de venta asignada.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historial de Unidades y Festivales Pasados -->
+    <div class="card card-custom shadow-lg rounded-4 overflow-hidden mb-4">
+        <div class="card-header bg-black text-warning fw-bold py-3 px-4" style="border-bottom: 2px solid #facc15;">
+            <i class="bi bi-clock-history me-2"></i>Historial de Unidades de Venta y Festivales Pasados
+        </div>
+        <div class="card-body p-4">
+            <div th:if="${unidadesHistoricas != null and not #sets.isEmpty(unidadesHistoricas)}" class="table-responsive">
+                <table class="table table-dark table-hover align-middle mb-0">
+                    <thead class="bg-black text-warning">
+                    <tr>
+                        <th class="py-2 px-3 text-warning">Unidad de Venta</th>
+                        <th class="py-2 px-3 text-warning">Código</th>
+                        <th class="py-2 px-3 text-warning">Festival Vinculado</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="uv : ${unidadesHistoricas}">
+                        <td class="px-3 fw-bold text-light" th:text="${uv.nombreComercial}"></td>
+                        <td class="px-3 text-white-50" th:text="${uv.codigoUnico}"></td>
+                        <td class="px-3">
+                            <div th:if="${uv.festivales != null and not #sets.isEmpty(uv.festivales)}">
+                                    <span class="badge bg-warning text-dark fw-bold me-1 p-2"
+                                          th:each="f : ${uv.festivales}"
+                                          th:text="${f.nombre + ' (' + f.temporada + ')'}">
+                                        Festival
+                                    </span>
+                            </div>
+                            <div th:if="${uv.festivales == null or #sets.isEmpty(uv.festivales)}">
+                                <span class="text-white-50 small">Sin festival registrado</span>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div th:if="${unidadesHistoricas == null or #sets.isEmpty(unidadesHistoricas)}">
+                <p class="text-white-50 mb-0">No hay un historial de unidades de venta registradas todavía.</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

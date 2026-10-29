@@ -1,5 +1,17 @@
 package com.grupo10.epicentrogourmet.services.implementation;
 
+import com.grupo10.epicentrogourmet.dtos.PersonalDTO;
+import com.grupo10.epicentrogourmet.entities.*;
+import com.grupo10.epicentrogourmet.repositories.IPersonalRepository;
+import com.grupo10.epicentrogourmet.repositories.IUnidadVentaRepository;
+import com.grupo10.epicentrogourmet.repositories.IUserRoleRepository;
+import com.grupo10.epicentrogourmet.repositories.IUsuarioRepository;
+import com.grupo10.epicentrogourmet.services.IPersonalService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.temporal.ChronoUnit;
@@ -7,15 +19,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import com.grupo10.epicentrogourmet.entities.*;
-import com.grupo10.epicentrogourmet.dtos.PersonalDTO;
-import com.grupo10.epicentrogourmet.repositories.*;
-import com.grupo10.epicentrogourmet.services.IPersonalService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service("personalService")
 public class PersonalService implements IPersonalService {
@@ -177,5 +180,10 @@ public class PersonalService implements IPersonalService {
         p.setActivo(true);
         if(p.getCredenciales() != null) p.getCredenciales().setActivo(true);
         return repo.save(p);
+    }
+
+    @Override
+    public Personal findByCorreo(String correo) {
+        return repo.findByCredencialesCorreo(correo).orElse(null);
     }
 }

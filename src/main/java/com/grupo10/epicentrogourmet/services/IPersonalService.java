@@ -1,9 +1,10 @@
 package com.grupo10.epicentrogourmet.services;
 
+import com.grupo10.epicentrogourmet.dtos.PersonalDTO;
+import com.grupo10.epicentrogourmet.entities.Personal;
+
 import java.util.List;
 import java.util.Optional;
-import com.grupo10.epicentrogourmet.entities.Personal;
-import com.grupo10.epicentrogourmet.dtos.PersonalDTO;
 
 public interface IPersonalService {
     List<Personal> getAll();
@@ -22,5 +23,5 @@ public interface IPersonalService {
     Personal altaConUsuario(String tipo, PersonalDTO dto, Long unidadId);
     Personal reactivar(Long id);
 
-
+    Personal findByCorreo(String correo);
 }
