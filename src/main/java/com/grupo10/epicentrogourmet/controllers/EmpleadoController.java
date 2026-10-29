@@ -14,6 +14,9 @@ import com.grupo10.epicentrogourmet.services.implementation.PersonalService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -259,5 +262,29 @@ public class EmpleadoController {
         mAV.addObject("unidadesHistoricas", unidadesHistoricas);
         mAV.addObject("liquidaciones", liquidaciones);
         return mAV;
+    }
+
+    @GetMapping("/mi-informacion/recibo/{liquidacionId}")
+    @PreAuthorize("hasRole('EMPLEADO')")
+    @Transactional(readOnly = true)
+    public ResponseEntity<byte[]> descargarReciboSueldo(@PathVariable Long liquidacionId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Personal empleado = personalRepository.findByCredencialesCorreo(email)
+                .orElseThrow(() -> new RuntimeException("Empleado no encontrado"));
+
+        LiquidacionDeHaber liq = liquidacionRepository.findById(liquidacionId)
+                .orElseThrow(() -> new RuntimeException("Liquidación no encontrada"));
+
+        if (!liq.getPersonal().getId().equals(empleado.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No podés descargar recibos de otros empleados");
+        }
+
+        byte[] pdf = liquidacionDeHaberService.generarReciboSueldoPdf(liquidacionId);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "Recibo_Sueldo_" + liquidacionId + ".pdf");
+
+        return new ResponseEntity<>(pdf, headers, HttpStatus.OK);
     }
 }

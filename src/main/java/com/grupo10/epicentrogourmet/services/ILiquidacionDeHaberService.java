@@ -14,4 +14,6 @@ public interface ILiquidacionDeHaberService {
     // FORMULAS
     double calcularTotalACobrar(Long idPersonal, Long idUnidadVenta);
     LiquidacionDeHaber liquidar(Long idPersonal, Long idUnidadVenta);
+
+    byte[] generarReciboSueldoPdf(Long liquidacionId);
 }
