@@ -119,24 +119,36 @@ public class UnidadVentaService implements IUnidadVentaService {
         }
     }
 
+
     @Override
     @Transactional
     public void agregarPlato(Long unidadId, Plato plato) {
         UnidadVenta uv = unidadVentaRepository.findById(unidadId).orElseThrow();
         plato.setUnidadVenta(uv);
+        plato.setActivo(true); // nuevo plato siempre activo
         platoRepository.save(plato);
     }
 
     @Override
     @Transactional
     public void eliminarPlato(Long platoId) {
-        platoRepository.deleteById(platoId);
+        Plato plato = platoRepository.findById(platoId)
+                .orElseThrow(() -> new RuntimeException("Plato no encontrado"));
+        plato.setActivo(false); // BAJA LÓGICA - no borra
+        platoRepository.save(plato);
     }
 
     @Override
     public UnidadVenta findByCorreoResponsable(String correo) {
-        return unidadVentaRepository.findMiUnidad(correo)
+        UnidadVenta uv = unidadVentaRepository.findMiUnidad(correo)
                 .orElseThrow(() -> new RuntimeException("No tenés unidad asignada: " + correo));
+        // Filtrar solo activos
+        var activos = uv.getPlatosOfrecidos().stream()
+                .filter(Plato::isActivo)
+                .sorted(java.util.Comparator.comparing(Plato::getId))
+                .toList();
+        uv.setPlatosOfrecidos(new java.util.LinkedHashSet<>(activos));
+        return uv;
     }
 
     @Override
@@ -158,8 +170,14 @@ public class UnidadVentaService implements IUnidadVentaService {
     @Override
     @Transactional(readOnly = true)
     public Optional<UnidadVenta> findByIdWithPlatos(Long id) {
-        return unidadVentaRepository.findByIdWithPlatos(id);
+        var opt = unidadVentaRepository.findByIdWithPlatos(id);
+        opt.ifPresent(uv -> {
+            var activos = uv.getPlatosOfrecidos().stream()
+                    .filter(Plato::isActivo)
+                    .sorted(java.util.Comparator.comparing(Plato::getId))
+                    .toList();
+            uv.setPlatosOfrecidos(new java.util.LinkedHashSet<>(activos));
+        });
+        return opt;
     }
-
-
 }

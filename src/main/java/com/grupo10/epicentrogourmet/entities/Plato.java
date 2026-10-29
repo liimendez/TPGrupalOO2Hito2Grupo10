@@ -23,6 +23,9 @@ public class Plato {
 	@Column(length = 500)
 	private String imagenUrl;
 
+	@Column(nullable = false)
+	private boolean activo = true;
+
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "unidad_venta_id")
 	private UnidadVenta unidadVenta;

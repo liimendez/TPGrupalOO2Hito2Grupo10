@@ -38,8 +38,9 @@ public abstract class UnidadVenta {
 	@OneToMany(mappedBy = "unidadAsignada", fetch = FetchType.LAZY)
 	private Set<Personal> staff = new HashSet<>();
 
-	@OneToMany(mappedBy = "unidadVenta", fetch = FetchType.EAGER)
-	private Set<Plato> platosOfrecidos = new HashSet<>();
+	@OneToMany(mappedBy = "unidadVenta")
+	@OrderBy("id ASC")
+	private Set<Plato> platosOfrecidos;
 
 	@OneToMany(mappedBy = "unidadVenta", fetch = FetchType.LAZY)
 	private Set<Pedido> pedidos = new HashSet<>();

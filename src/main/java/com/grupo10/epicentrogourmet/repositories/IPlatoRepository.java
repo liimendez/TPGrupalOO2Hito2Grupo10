@@ -12,6 +12,9 @@ import java.util.Optional;
 public interface IPlatoRepository extends JpaRepository<Plato, Long> {
     List<Plato> findByUnidadVenta_Id(Long unidadVentaId);
 
+
+    List<Plato> findByUnidadVenta_IdAndActivoTrue(Long unidadVentaId);
+
     @Query("SELECT p FROM Plato p LEFT JOIN FETCH p.unidadVenta WHERE p.id = :id")
     Optional<Plato> findByIdWithUnidad(@Param("id") Long id);
 }
