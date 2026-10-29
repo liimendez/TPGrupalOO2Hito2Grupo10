@@ -12,6 +12,16 @@ import com.grupo10.epicentrogourmet.repositories.*;
 import com.grupo10.epicentrogourmet.services.ILiquidacionDeHaberService;
 import com.grupo10.epicentrogourmet.services.IPersonalService;
 
+import java.awt.Color;
+import java.io.ByteArrayOutputStream;
+
+import com.grupo10.epicentrogourmet.entities.*;
+import com.grupo10.epicentrogourmet.repositories.*;
+
+import com.lowagie.text.*;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
+
 @Service("liquidacionDeHaberService")
 public class LiquidacionDeHaberService implements ILiquidacionDeHaberService {
 
@@ -95,5 +105,61 @@ public class LiquidacionDeHaberService implements ILiquidacionDeHaberService {
         liq.setFechaLiquidacion(LocalDate.now());
 
         return liquidacionRepo.save(liq);
+    }
+
+    @Override
+    public byte[] generarReciboSueldoPdf(Long liquidacionId) {
+        LiquidacionDeHaber liq = liquidacionRepo.findById(liquidacionId)
+                .orElseThrow(() -> new RuntimeException("Liquidación no encontrada ID: " + liquidacionId));
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        Document document = new Document(PageSize.A4);
+
+        try {
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            Font tituloFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18, Color.DARK_GRAY);
+            Font subTituloFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.GRAY);
+            Font textoBold = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.BLACK);
+            Font textoNormal = FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK);
+
+            Paragraph titulo = new Paragraph("EPICENTRO GOURMET S.A.", tituloFont);
+            titulo.setAlignment(Element.ALIGN_CENTER);
+            document.add(titulo);
+
+            Paragraph sub = new Paragraph("RECIBO DE SUELDO - Liquidación N°: " + liq.getId(), subTituloFont);
+            sub.setAlignment(Element.ALIGN_CENTER);
+            sub.setSpacingAfter(20);
+            document.add(sub);
+
+            PdfPTable tableInfo = new PdfPTable(2);
+            tableInfo.setWidthPercentage(100);
+
+            tableInfo.addCell(new Paragraph("Empleado: " + liq.getPersonal().getNombre() + " " + liq.getPersonal().getApellido(), textoNormal));
+            tableInfo.addCell(new Paragraph("DNI: " + liq.getPersonal().getDni(), textoNormal));
+            tableInfo.addCell(new Paragraph("Fecha de Liquidación: " + liq.getFechaLiquidacion(), textoNormal));
+            tableInfo.addCell(new Paragraph("Unidad de Venta: " + (liq.getUnidadVenta() != null ? liq.getUnidadVenta().getNombreComercial() : "N/A"), textoNormal));
+
+            tableInfo.setSpacingAfter(20);
+            document.add(tableInfo);
+
+            PdfPTable tableDetalle = new PdfPTable(2);
+            tableDetalle.setWidthPercentage(100);
+
+            tableDetalle.addCell(new Paragraph("Concepto", textoBold));
+            tableDetalle.addCell(new Paragraph("Monto", textoBold));
+
+            tableDetalle.addCell(new Paragraph("Total Neto a Cobrar", textoNormal));
+            tableDetalle.addCell(new Paragraph("$ " + String.format("%.2f", liq.getTotalACobrar()), textoNormal));
+
+            document.add(tableDetalle);
+
+            document.close();
+        } catch (Exception e) {
+            throw new RuntimeException("Error al generar el PDF del recibo de sueldo", e);
+        }
+
+        return out.toByteArray();
     }
 }
