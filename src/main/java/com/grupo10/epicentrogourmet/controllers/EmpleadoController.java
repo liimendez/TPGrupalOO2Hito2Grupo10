@@ -2,9 +2,7 @@ package com.grupo10.epicentrogourmet.controllers;
 
 import com.grupo10.epicentrogourmet.dtos.PersonalDTO;
 import com.grupo10.epicentrogourmet.dtos.RequestPersonalDTO;
-import com.grupo10.epicentrogourmet.entities.LiquidacionDeHaber;
-import com.grupo10.epicentrogourmet.entities.Personal;
-import com.grupo10.epicentrogourmet.entities.UnidadVenta;
+import com.grupo10.epicentrogourmet.entities.*;
 import com.grupo10.epicentrogourmet.helpers.ViewRouteHelper;
 import com.grupo10.epicentrogourmet.repositories.ILiquidacionDeHaberRepository;
 import com.grupo10.epicentrogourmet.repositories.IPersonalRepository;
@@ -13,6 +11,8 @@ import com.grupo10.epicentrogourmet.repositories.IUsuarioRepository;
 import com.grupo10.epicentrogourmet.services.ILiquidacionDeHaberService;
 import com.grupo10.epicentrogourmet.services.implementation.PersonalService;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -41,6 +41,9 @@ public class EmpleadoController {
     @Autowired private PersonalService personalService;
     @Autowired private ILiquidacionDeHaberRepository liquidacionRepository;
     @Autowired private ILiquidacionDeHaberService liquidacionDeHaberService;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public EmpleadoController(IUnidadVentaRepository unidadVentaRepository,
                               IPersonalRepository personalRepository,
@@ -150,16 +153,41 @@ public class EmpleadoController {
         req.setDni(p.getDni());
         req.setEmail(p.getCredenciales() != null ? p.getCredenciales().getCorreo() : "");
         req.setFechaNacimiento(p.getFechaNacimiento()); req.setFechaIngreso(p.getFechaIngreso());
-        req.setTipoPersonal(p.getClass().getSimpleName().toUpperCase().contains("CAJERO") ? "CAJERO" : "COCINERO");
+        // FIX: usar tipoPersonal
+        req.setTipoPersonal(p.getTipoPersonal() != null ? p.getTipoPersonal().name() : "CAJERO");
         model.addAttribute("empleadoId", id); model.addAttribute("nuevoEmpleado", req);
         model.addAttribute("unidad", uv); model.addAttribute("personal", p);
         return ViewRouteHelper.EMPLEADO_EDITAR;
     }
 
-    @PostMapping("/editar/{id}") @Transactional
+    @PostMapping("/editar/{id}")
+    @Transactional
     public String guardarEdicion(@PathVariable Long id, @ModelAttribute("nuevoEmpleado") RequestPersonalDTO req) {
         var p = personalRepository.findByIdIncludingInactive(id).orElseThrow();
         validarQueEsDeMiUnidad(p);
+
+        String tipoNuevo = req.getTipoPersonal();
+        String tipoViejo = p.getTipoPersonal() != null ? p.getTipoPersonal().name() : "";
+
+        if (!tipoViejo.equals(tipoNuevo)) {
+            if (p instanceof Cocinero) {
+                entityManager.createNativeQuery("DELETE FROM cocinero WHERE id = :id").setParameter("id", id).executeUpdate();
+            } else if (p instanceof Cajero) {
+                entityManager.createNativeQuery("DELETE FROM cajero WHERE id = :id").setParameter("id", id).executeUpdate();
+            } else if (p instanceof Lavaplatos) {
+                entityManager.createNativeQuery("DELETE FROM lavaplatos WHERE id = :id").setParameter("id", id).executeUpdate();
+            } else if (p instanceof Ayudante) {
+                entityManager.createNativeQuery("DELETE FROM ayudante WHERE id = :id").setParameter("id", id).executeUpdate();
+            }
+            switch(tipoNuevo) {
+                case "LAVAPLATOS" -> entityManager.createNativeQuery("INSERT INTO lavaplatos (id) VALUES (:id)").setParameter("id", id).executeUpdate();
+                case "AYUDANTE" -> entityManager.createNativeQuery("INSERT INTO ayudante (id) VALUES (:id)").setParameter("id", id).executeUpdate();
+                case "CAJERO" -> entityManager.createNativeQuery("INSERT INTO cajero (id, turno) VALUES (:id, 'MANIANA')").setParameter("id", id).executeUpdate();
+                case "COCINERO" -> entityManager.createNativeQuery("INSERT INTO cocinero (id, categoria, especialidad) VALUES (:id, 'GENERAL', 'GENERAL')").setParameter("id", id).executeUpdate();
+            }
+            p.setTipoPersonal(PersonalType.valueOf(tipoNuevo));
+        }
+
         p.setNombre(req.getNombre()); p.setApellido(req.getApellido()); p.setDni(req.getDni());
         p.setFechaNacimiento(req.getFechaNacimiento()); p.setFechaIngreso(req.getFechaIngreso());
         personalRepository.save(p);
@@ -170,21 +198,16 @@ public class EmpleadoController {
         return "redirect:" + ViewRouteHelper.EMPLEADO_ROUTE;
     }
 
-    // LIQUIDACION con validacion de duplicado
-    @GetMapping("/liquidar/{id}")
-    @Transactional
+    @GetMapping("/liquidar/{id}") @Transactional
     public String liquidar(@PathVariable Long id, Model model) {
         var p = personalRepository.findByIdIncludingInactive(id).orElseThrow();
         validarQueEsDeMiUnidad(p);
         var uv = p.getUnidadAsignada();
         if(uv == null) throw new RuntimeException("Empleado " + id + " sin unidad");
-
-        // NO CREAR SI YA LIQUIDO HOY
         var hoy = LocalDate.now();
         if(liquidacionRepository.existsByPersonalIdAndFechaLiquidacion(id, hoy)) {
             return "redirect:/empleado/liquidaciones/" + id;
         }
-
         var liq = liquidacionDeHaberService.liquidar(p.getId(), uv.getId());
         model.addAttribute("personal", p);
         model.addAttribute("unidad", uv);
@@ -194,8 +217,7 @@ public class EmpleadoController {
         return ViewRouteHelper.EMPLEADO_LIQUIDACION;
     }
 
-    @GetMapping("/liquidaciones/{id}")
-    @Transactional(readOnly = true)
+    @GetMapping("/liquidaciones/{id}") @Transactional(readOnly = true)
     public String historial(@PathVariable Long id, Model model) {
         var p = personalRepository.findByIdIncludingInactive(id).orElseThrow();
         validarQueEsDeMiUnidad(p);
@@ -204,8 +226,7 @@ public class EmpleadoController {
         return ViewRouteHelper.EMPLEADO_HISTORIAL;
     }
 
-    @GetMapping("/liquidacion/ver/{liquidacionId}")
-    @Transactional(readOnly = true)
+    @GetMapping("/liquidacion/ver/{liquidacionId}") @Transactional(readOnly = true)
     public String verLiquidacion(@PathVariable Long liquidacionId, Model model) {
         var liq = liquidacionRepository.findById(liquidacionId).orElseThrow(() -> new RuntimeException("Liquidación no encontrada"));
         if(liq.getPersonal() == null) throw new RuntimeException("Liquidación vieja corrupta, borrar id " + liquidacionId);
@@ -219,33 +240,24 @@ public class EmpleadoController {
         return ViewRouteHelper.EMPLEADO_LIQUIDACION;
     }
 
-    @GetMapping("/mi-informacion")
-    @PreAuthorize("hasRole('EMPLEADO')")
-    @Transactional(readOnly = true)
+    @GetMapping("/mi-informacion") @PreAuthorize("hasRole('EMPLEADO')") @Transactional(readOnly = true)
     public ModelAndView verMiInformacionPropia() {
         ModelAndView mAV = new ModelAndView(ViewRouteHelper.EMPLEADO_MI_INFORMACION);
-
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication != null ? authentication.getName() : "";
-
         Personal empleado = personalRepository.findByCredencialesCorreo(email)
                 .orElseThrow(() -> new RuntimeException("No se encontró el Usuario del empleado para el correo: " + email));
-
         UnidadVenta unidadActual = empleado.getUnidadAsignada();
-
         var liquidaciones = liquidacionRepository.findByPersonalIdOrderByFechaLiquidacionDesc(empleado.getId());
-
         Set<UnidadVenta> unidadesHistoricas = liquidaciones.stream()
                 .map(LiquidacionDeHaber::getUnidadVenta)
                 .filter(uv -> uv != null)
                 .collect(Collectors.toSet());
-
         mAV.addObject("empleado", empleado);
         mAV.addObject("unidadActual", unidadActual);
         mAV.addObject("festivalesActuales", unidadActual != null ? unidadActual.getFestivales() : null);
         mAV.addObject("unidadesHistoricas", unidadesHistoricas);
         mAV.addObject("liquidaciones", liquidaciones);
-
         return mAV;
     }
 }

@@ -24,4 +24,9 @@ public abstract class Personal {
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "unidad_asignada_id", nullable = false)
 	private UnidadVenta unidadAsignada;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "tipo_personal")
+	private PersonalType tipoPersonal;
+
 }

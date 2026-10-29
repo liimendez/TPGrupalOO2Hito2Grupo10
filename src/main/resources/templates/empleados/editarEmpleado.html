@@ -56,7 +56,13 @@
                             </div>
                             <div class="col-12">
                                 <label class="form-label text-secondary small text-uppercase">Tipo</label>
-                                <input type="text" class="form-control bg-dark border-secondary text-warning fw-bold" th:field="*{tipoPersonal}" readonly>
+                                <select class="form-select bg-dark text-warning fw-bold border-warning" th:field="*{tipoPersonal}" required>
+                                    <option value="CAJERO">CAJERO</option>
+                                    <option value="COCINERO">COCINERO</option>
+                                    <option value="LAVAPLATOS">LAVAPLATOS</option>
+                                    <option value="AYUDANTE">AYUDANTE</option>
+                                </select>
+                                <small class="text-secondary">Cambia de CAJERO a LAVAPLATOS / AYUDANTE</small>
                             </div>
                         </div>
 

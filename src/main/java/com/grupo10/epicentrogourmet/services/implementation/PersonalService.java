@@ -139,6 +139,7 @@ public class PersonalService implements IPersonalService {
         if (edad < 18) throw new IllegalArgumentException("No se puede dar de alta menor de 18. Edad: " + edad);
         if (dto.getFechaIngreso() != null && dto.getFechaIngreso().isAfter(LocalDate.now())) throw new IllegalArgumentException("Fecha ingreso no puede ser futura");
         if (usuarioRepository.findByCorreo(dto.getEmail()).isPresent()) throw new IllegalArgumentException("El email " + dto.getEmail() + " ya está registrado");
+
         String passPlana = UUID.randomUUID().toString().substring(0, 8);
         UserRole userRole = userRoleRepository.findByRol(RoleType.EMPLEADO).orElseThrow(() -> new RuntimeException("No existe rol EMPLEADO"));
         Usuario usuario = new Usuario();
@@ -147,18 +148,38 @@ public class PersonalService implements IPersonalService {
         usuario.setRol(userRole);
         usuario.setActivo(true);
         usuarioRepository.save(usuario);
+
         Personal personal;
-        if (tipo.toUpperCase().contains("COCIN")) {
-            Cocinero coc = new Cocinero();
-            coc.setCategoria(dto.getCategoria() != null ? dto.getCategoria() : "LAVAPLATOS");
-            coc.setEspecialidad(dto.getEspecialidad() != null ? dto.getEspecialidad() : "GENERAL");
-            personal = coc;
-        } else {
-            Cajero caj = new Cajero();
-            String t = dto.getTurno() != null ? dto.getTurno().toUpperCase() : "MANIANA";
-            caj.setTurno(t.contains("MAN") || t.contains("MAÑ") ? Cajero.Turno.MANIANA : Cajero.Turno.NOCHE);
-            personal = caj;
+        String tipoUpper = tipo.toUpperCase();
+
+        switch(tipoUpper) {
+            case "CAJERO" -> {
+                Cajero caj = new Cajero();
+                String t = dto.getTurno() != null ? dto.getTurno().toUpperCase() : "MANIANA";
+                caj.setTurno(t.contains("MAN") || t.contains("MAÑ") ? Cajero.Turno.MANIANA : Cajero.Turno.NOCHE);
+                caj.setTipoPersonal(PersonalType.CAJERO);
+                personal = caj;
+            }
+            case "COCINERO" -> {
+                Cocinero coc = new Cocinero();
+                coc.setCategoria(dto.getCategoria() != null ? dto.getCategoria() : "GENERAL");
+                coc.setEspecialidad(dto.getEspecialidad() != null ? dto.getEspecialidad() : "GENERAL");
+                coc.setTipoPersonal(PersonalType.COCINERO);
+                personal = coc;
+            }
+            case "LAVAPLATOS" -> {
+                Lavaplatos lav = new Lavaplatos();
+                lav.setTipoPersonal(PersonalType.LAVAPLATOS);
+                personal = lav;
+            }
+            case "AYUDANTE" -> {
+                Ayudante ayu = new Ayudante();
+                ayu.setTipoPersonal(PersonalType.AYUDANTE);
+                personal = ayu;
+            }
+            default -> throw new IllegalArgumentException("Tipo inválido: " + tipo);
         }
+
         personal.setNombre(dto.getNombre());
         personal.setApellido(dto.getApellido());
         personal.setDni(dto.getDni());
@@ -168,6 +189,7 @@ public class PersonalService implements IPersonalService {
         personal.setCredenciales(usuario);
         personal.setUnidadAsignada(unidadVentaRepository.findById(unidadId).orElseThrow());
         repo.save(personal);
+
         try {
             emailService.enviarMail(dto.getEmail(), "Epicentro Gourmet - Acceso", "Hola " + dto.getNombre() + "!\nUsuario: " + dto.getEmail() + "\nPass: " + passPlana);
         } catch (Exception e) { System.err.println("MAIL ERROR: " + e.getMessage()); }
