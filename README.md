@@ -153,4 +153,6 @@ Commits LiiMendez
     c7124d6 - fix: liquidacion haberes formula oficial PDF (225k/230k) + ranking mayor canon
     4263129 - feat: fix liquidacion oficial 225k/230k + ranking mayor-canon + templates finales
 
-Grupo 10 - OO2 - UNLa
+Grupo 10 - OO2 - UNLa 
+
+/////////

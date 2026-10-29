@@ -4,8 +4,12 @@ spring:
     username: ${USERNAME}
     password: ${PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      mode: always
   jpa:
     show-sql: true
+    defer-datasource-initialization: true
     hibernate:
       ddl-auto: update
     properties:
@@ -16,8 +20,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: yeyiimendez@gmail.com
-    password: wrumtzkbotcwpbgq
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -25,4 +29,3 @@ spring:
           starttls:
             enable: true
             required: true
-
