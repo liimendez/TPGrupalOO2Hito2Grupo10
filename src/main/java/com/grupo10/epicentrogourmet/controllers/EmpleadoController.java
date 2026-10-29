@@ -2,6 +2,7 @@ package com.grupo10.epicentrogourmet.controllers;
 
 import com.grupo10.epicentrogourmet.dtos.PersonalDTO;
 import com.grupo10.epicentrogourmet.dtos.RequestPersonalDTO;
+import com.grupo10.epicentrogourmet.entities.LiquidacionDeHaber;
 import com.grupo10.epicentrogourmet.entities.Personal;
 import com.grupo10.epicentrogourmet.entities.UnidadVenta;
 import com.grupo10.epicentrogourmet.helpers.ViewRouteHelper;
@@ -11,7 +12,10 @@ import com.grupo10.epicentrogourmet.repositories.IUnidadVentaRepository;
 import com.grupo10.epicentrogourmet.repositories.IUsuarioRepository;
 import com.grupo10.epicentrogourmet.services.ILiquidacionDeHaberService;
 import com.grupo10.epicentrogourmet.services.implementation.PersonalService;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,9 +23,13 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.ModelAndView;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/empleado")
@@ -34,6 +42,19 @@ public class EmpleadoController {
     @Autowired private ILiquidacionDeHaberRepository liquidacionRepository;
     @Autowired private ILiquidacionDeHaberService liquidacionDeHaberService;
 
+    public EmpleadoController(IUnidadVentaRepository unidadVentaRepository,
+                              IPersonalRepository personalRepository,
+                              IUsuarioRepository usuarioRepository,
+                              PersonalService personalService,
+                              ILiquidacionDeHaberRepository liquidacionRepository,
+                              ILiquidacionDeHaberService liquidacionDeHaberService) {
+        this.unidadVentaRepository = unidadVentaRepository;
+        this.personalRepository = personalRepository;
+        this.usuarioRepository = usuarioRepository;
+        this.personalService = personalService;
+        this.liquidacionRepository = liquidacionRepository;
+        this.liquidacionDeHaberService = liquidacionDeHaberService;
+    }
 
     private UnidadVenta getUnidadDelLogueado() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -196,5 +217,35 @@ public class EmpleadoController {
         model.addAttribute("anios", personalService.getAntiguedadAnios(p.getId()));
         model.addAttribute("liquidacion", liq);
         return ViewRouteHelper.EMPLEADO_LIQUIDACION;
+    }
+
+    @GetMapping("/mi-informacion")
+    @PreAuthorize("hasRole('EMPLEADO')")
+    @Transactional(readOnly = true)
+    public ModelAndView verMiInformacionPropia() {
+        ModelAndView mAV = new ModelAndView(ViewRouteHelper.EMPLEADO_MI_INFORMACION);
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication != null ? authentication.getName() : "";
+
+        Personal empleado = personalRepository.findByCredencialesCorreo(email)
+                .orElseThrow(() -> new RuntimeException("No se encontró el Usuario del empleado para el correo: " + email));
+
+        UnidadVenta unidadActual = empleado.getUnidadAsignada();
+
+        var liquidaciones = liquidacionRepository.findByPersonalIdOrderByFechaLiquidacionDesc(empleado.getId());
+
+        Set<UnidadVenta> unidadesHistoricas = liquidaciones.stream()
+                .map(LiquidacionDeHaber::getUnidadVenta)
+                .filter(uv -> uv != null)
+                .collect(Collectors.toSet());
+
+        mAV.addObject("empleado", empleado);
+        mAV.addObject("unidadActual", unidadActual);
+        mAV.addObject("festivalesActuales", unidadActual != null ? unidadActual.getFestivales() : null);
+        mAV.addObject("unidadesHistoricas", unidadesHistoricas);
+        mAV.addObject("liquidaciones", liquidaciones);
+
+        return mAV;
     }
 }

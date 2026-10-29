@@ -24,7 +24,6 @@ public interface IPersonalRepository extends JpaRepository<Personal, Long> {
     @Query("SELECT p FROM Personal p LEFT JOIN FETCH p.credenciales LEFT JOIN FETCH p.unidadAsignada WHERE p.unidadAsignada.id = :id")
     List<Personal> findByUnidadVentaId(@Param("id") Long id);
 
-
     @Query("SELECT p FROM Personal p LEFT JOIN FETCH p.credenciales LEFT JOIN FETCH p.unidadAsignada WHERE p.credenciales.correo = :correo")
     Optional<Personal> findByCredencialesCorreo(@Param("correo") String correo);
 
