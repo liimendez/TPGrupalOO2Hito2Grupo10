@@ -61,7 +61,7 @@ public class UnidadVentaController {
         if (auth != null) {
             esResponsable = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().contains("RESPONSABLE"));
             esAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().contains("ADMIN"));
-            esCajero = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().contains("CAJERO") || a.getAuthority().contains("COCINERO"));
+            esCajero = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().contains("CAJERO") || a.getAuthority().contains("COCINERO") || a.getAuthority().contains("EMPLEADO"));
         }
 
         ModelAndView mav = new ModelAndView("unidad-venta/detalle");
@@ -71,6 +71,12 @@ public class UnidadVentaController {
         mav.addObject("esAdmin", esAdmin);
         mav.addObject("esCajero", esCajero);
         return mav;
+    }
+
+    // ALIAS para que /detalle/1 funcione y muestre hamburguesas para agregar pedido
+    @GetMapping("/detalle/{id}")
+    public ModelAndView detalleAlias(@PathVariable Long id) {
+        return new ModelAndView("redirect:/unidad-venta/" + id);
     }
 
     @PostMapping("/{id}/agregar-plato")

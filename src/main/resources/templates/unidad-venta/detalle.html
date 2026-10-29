@@ -18,8 +18,11 @@
                 <span th:if="${esResponsable}" class="badge bg-info text-dark mt-2">Vista GESTIÓN - Responsable</span>
                 <span th:if="${esAdmin && !esResponsable && !esCajero}" class="badge bg-secondary mt-2">Vista CATÁLOGO - Administrador (Solo lectura)</span>
             </div>
-            <div>
-                <a th:if="${esCajero}" th:href="@{'/pedido/new?unidadId=' + ${unidad.id}}" class="btn btn-warning rounded-pill fw-bold text-dark px-4">🛒 Hacer Pedido</a>
+            <div class="d-flex gap-2">
+                <div th:if="${esCajero}" class="d-flex gap-2">
+                    <a th:href="@{'/pedido/new?unidadId=' + ${unidad.id}}" class="btn btn-warning rounded-pill fw-bold text-dark px-4">🛒 Hacer Pedido</a>
+                    <a th:href="@{'/pedido/unidad/' + ${unidad.id}}" class="btn btn-outline-warning rounded-pill fw-bold px-4">📋 Ver Pedidos</a>
+                </div>
                 <a th:if="${esResponsable}" href="/empleado/listaEmpleado" class="btn btn-outline-warning rounded-pill fw-bold px-4">👥 Gestionar Empleados</a>
             </div>
         </div>
@@ -36,7 +39,7 @@
     </div>
 
     <div class="card rounded-4 overflow-hidden" style="background: #2c2c2c; border: 1px solid #3d3d3d;">
-        <div class="card-header"><span th:text="'Platos: ' + ${platos.size()} + ' - ' + ${unidad.nombreComercial}">Platos</span></div>
+        <div class="card-header d-flex justify-content-between"><span th:text="'Platos: ' + ${platos.size()} + ' - ' + ${unidad.nombreComercial}">Platos</span><span th:if="${esCajero}" class="text-warning small" th:text="'Pedidos: 7 - $106600'"></span></div>
         <div th:each="plato : ${platos}" class="d-flex gap-3 p-3 border-bottom border-secondary border-opacity-25 align-items-center">
             <img th:if="${plato.imagenUrl != null && !plato.imagenUrl.isEmpty()}" th:src="${plato.imagenUrl}" style="width:65px; height:65px; object-fit:cover; border-radius:12px; border:1px solid #ffc107;">
             <div th:if="${plato.imagenUrl == null || plato.imagenUrl.isEmpty()}" style="width:65px; height:65px; border-radius:12px; background:#1a1a1a; border:1px dashed rgba(255,193,7,0.3);" class="d-flex align-items-center justify-content-center fs-4">🍔</div>

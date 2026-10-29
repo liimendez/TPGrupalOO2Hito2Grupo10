@@ -24,4 +24,8 @@ public interface IUnidadVentaRepository extends JpaRepository<UnidadVenta, Seria
 
     @Query("SELECT uv FROM UnidadVenta uv LEFT JOIN FETCH uv.platosOfrecidos p WHERE uv.id = :id ORDER BY p.id ASC")
     Optional<UnidadVenta> findByIdWithPlatos(@Param("id") Long id);
+
+    // === PARA CAJERO - CON TU MODELO REAL ===
+    @Query("SELECT uv FROM UnidadVenta uv JOIN uv.staff s WHERE s.credenciales.correo = :correo")
+    Optional<UnidadVenta> findUnidadByEmpleadoCorreo(@Param("correo") String correo);
 }
