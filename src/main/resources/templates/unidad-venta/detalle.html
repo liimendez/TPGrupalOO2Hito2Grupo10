@@ -39,7 +39,9 @@
     </div>
 
     <div class="card rounded-4 overflow-hidden" style="background: #2c2c2c; border: 1px solid #3d3d3d;">
-        <div class="card-header d-flex justify-content-between"><span th:text="'Platos: ' + ${platos.size()} + ' - ' + ${unidad.nombreComercial}">Platos</span><span th:if="${esCajero}" class="text-warning small" th:text="'Pedidos: 7 - $106600'"></span></div>
+        <div class="card-header">
+            <span th:text="'Platos: ' + ${platos.size()} + ' - ' + ${unidad.nombreComercial}">Platos</span>
+        </div>
         <div th:each="plato : ${platos}" class="d-flex gap-3 p-3 border-bottom border-secondary border-opacity-25 align-items-center">
             <img th:if="${plato.imagenUrl != null && !plato.imagenUrl.isEmpty()}" th:src="${plato.imagenUrl}" style="width:65px; height:65px; object-fit:cover; border-radius:12px; border:1px solid #ffc107;">
             <div th:if="${plato.imagenUrl == null || plato.imagenUrl.isEmpty()}" style="width:65px; height:65px; border-radius:12px; background:#1a1a1a; border:1px dashed rgba(255,193,7,0.3);" class="d-flex align-items-center justify-content-center fs-4">🍔</div>

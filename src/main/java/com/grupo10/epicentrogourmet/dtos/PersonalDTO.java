@@ -3,7 +3,6 @@ package com.grupo10.epicentrogourmet.dtos;
 import java.time.LocalDate;
 import org.springframework.format.annotation.DateTimeFormat;
 import lombok.*;
-import com.grupo10.epicentrogourmet.entities.PersonalType;
 
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class PersonalDTO {

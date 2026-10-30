@@ -17,7 +17,7 @@ public interface IPedidoRepository extends JpaRepository<Pedido, Serializable> {
     Optional<Pedido> findById(Long id);
     List<Pedido> findByUnidadVentaId(Long unidadVentaId);
 
-    // FIX para /pedido/unidad/1 - trae detalles + plato con FETCH para evitar LazyInitializationException 500
+
     @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.detalles d LEFT JOIN FETCH d.plato WHERE p.unidadVenta.id = :unidadVentaId")
     List<Pedido> findByUnidadVentaIdConDetalles(@Param("unidadVentaId") Long unidadVentaId);
 

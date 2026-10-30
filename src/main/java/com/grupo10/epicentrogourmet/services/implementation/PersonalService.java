@@ -2,6 +2,7 @@ package com.grupo10.epicentrogourmet.services.implementation;
 
 import com.grupo10.epicentrogourmet.dtos.PersonalDTO;
 import com.grupo10.epicentrogourmet.entities.*;
+import com.grupo10.epicentrogourmet.repositories.ICategoriaCocinaRepository;
 import com.grupo10.epicentrogourmet.repositories.IPersonalRepository;
 import com.grupo10.epicentrogourmet.repositories.IUnidadVentaRepository;
 import com.grupo10.epicentrogourmet.repositories.IUserRoleRepository;
@@ -27,6 +28,7 @@ public class PersonalService implements IPersonalService {
     @Autowired private IUsuarioRepository usuarioRepository;
     @Autowired private IUserRoleRepository userRoleRepository;
     @Autowired private IUnidadVentaRepository unidadVentaRepository;
+    @Autowired private ICategoriaCocinaRepository categoriaCocinaRepository;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private EmailService emailService;
 
@@ -117,8 +119,11 @@ public class PersonalService implements IPersonalService {
             } else if (p instanceof Cocinero) {
                 dto.setTipoPersonal("COCINERO");
                 Cocinero coc = (Cocinero) p;
-                dto.setCategoria(coc.getCategoria() != null ? coc.getCategoria().toString() : "LAVAPLATOS");
-                dto.setEspecialidad(coc.getEspecialidad() != null ? coc.getEspecialidad().toString() : "GENERAL");
+                if(coc.getCategoriaCocina() != null){
+                    dto.setCategoria(coc.getCategoriaCocina().getNombre());
+                } else {
+                    dto.setCategoria("LAVAPLATOS");
+                }
             } else {
                 dto.setTipoPersonal("EMPLEADO");
             }
@@ -157,25 +162,17 @@ public class PersonalService implements IPersonalService {
                 Cajero caj = new Cajero();
                 String t = dto.getTurno() != null ? dto.getTurno().toUpperCase() : "MANIANA";
                 caj.setTurno(t.contains("MAN") || t.contains("MAÑ") ? Cajero.Turno.MANIANA : Cajero.Turno.NOCHE);
-                caj.setTipoPersonal(PersonalType.CAJERO);
                 personal = caj;
             }
-            case "COCINERO" -> {
+            case "COCINERO", "AYUDANTE", "LAVAPLATOS" -> {
                 Cocinero coc = new Cocinero();
-                coc.setCategoria(dto.getCategoria() != null ? dto.getCategoria() : "GENERAL");
-                coc.setEspecialidad(dto.getEspecialidad() != null ? dto.getEspecialidad() : "GENERAL");
-                coc.setTipoPersonal(PersonalType.COCINERO);
+                // dto.getCategoria trae EJECUTIVO / AYUDANTE / LAVAPLATOS
+                String nombreCat = dto.getCategoria() != null ? dto.getCategoria().toUpperCase() : tipoUpper;
+                if(nombreCat.equals("COCINERO")) nombreCat = "EJECUTIVO";
+                CategoriaCocina cat = categoriaCocinaRepository.findByNombreIgnoreCase(nombreCat)
+                        .orElseGet(() -> categoriaCocinaRepository.findByNombreIgnoreCase("LAVAPLATOS").orElse(null));
+                coc.setCategoriaCocina(cat);
                 personal = coc;
-            }
-            case "LAVAPLATOS" -> {
-                Lavaplatos lav = new Lavaplatos();
-                lav.setTipoPersonal(PersonalType.LAVAPLATOS);
-                personal = lav;
-            }
-            case "AYUDANTE" -> {
-                Ayudante ayu = new Ayudante();
-                ayu.setTipoPersonal(PersonalType.AYUDANTE);
-                personal = ayu;
             }
             default -> throw new IllegalArgumentException("Tipo inválido: " + tipo);
         }

@@ -1,35 +1,45 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8"><title>Nuevo Pedido</title>
+    <meta charset="UTF-8"><title>Nuevo Pedido - Multi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>body{background:#1a1d23!important}</style>
 </head>
 <body class="bg-dark text-light">
-<div class="container py-5" style="max-width:600px;">
+<div class="container py-5" style="max-width:750px;">
     <a th:href="@{'/unidad-venta/' + ${unidadVenta.id}}" class="btn btn-outline-warning btn-sm mb-4 rounded-pill">← Volver a [[${unidadVenta.nombreComercial}]]</a>
 
-    <div class="card bg-black border-warning border-2 rounded-4">
+    <div class="card bg-black border-warning border-2 rounded-4 shadow-lg">
         <div class="card-body p-4">
             <h2 class="text-warning fw-bold mb-1">Nuevo Pedido</h2>
             <p class="text-white-50">Estás pidiendo en: <b class="text-warning" th:text="${unidadVenta.nombreComercial} + ' - ' + ${unidadVenta.codigoUnico}"></b></p>
+            <p class="small text-white-50">Marcá cantidad en los platos que quieras. Si dejás en 0 no se agrega. Todo se guarda en 1 solo pedido.</p>
             <hr class="border-secondary">
 
-            <form th:action="@{/pedido/save}" method="post">
+            <form th:action="@{/pedido/saveMulti}" method="post">
                 <input type="hidden" name="unidadVentaId" th:value="${unidadVenta.id}" />
 
-                <div class="mb-3">
-                    <label class="form-label text-warning fw-bold">Plato</label>
-                    <select name="platoId" class="form-select bg-dark text-white border-secondary" required>
-                        <option th:each="p : ${platos}" th:value="${p.id}" th:text="${p.nombre + ' - $' + p.precioVenta}" th:selected="${platoIdPreseleccionado != null && p.id == platoIdPreseleccionado}"></option>
-                    </select>
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover align-middle mb-0">
+                        <thead class="text-warning">
+                        <tr><th>Plato</th><th>Precio Venta</th><th style="width:130px">Cantidad</th></tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="p : ${platos}">
+                            <td class="fw-bold text-warning" th:text="${p.nombre}">McFiesta</td>
+                            <td th:text="'$' + ${p.precioVenta}">$20000</td>
+                            <td>
+                                <input type="number" min="0" value="0" class="form-control bg-dark text-white border-warning"
+                                       th:name="'cant_' + ${p.id}">
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
 
-                <div class="mb-4">
-                    <label class="form-label text-warning fw-bold">Cantidad</label>
-                    <input type="number" name="cantidad" value="1" min="1" class="form-control bg-dark text-white border-secondary" required>
-                </div>
+                <div th:if="${platos == null or platos.isEmpty()}" class="alert alert-warning mt-3">Esta unidad no tiene platos cargados</div>
 
-                <button type="submit" class="btn btn-warning w-100 fw-bold rounded-pill">🛒 Guardar Pedido</button>
+                <button type="submit" class="btn btn-warning w-100 fw-bold rounded-pill mt-4 py-2">🛒 Guardar Pedido con Varios Platos</button>
             </form>
         </div>
     </div>
