@@ -7,8 +7,8 @@ import lombok.*;
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 @Table(name = "cocinero")
 public class Cocinero extends Personal {
-	private String categoria; // cocinero, ayudante, lavaplatos
-	private String especialidad; //
 
-
+	@ManyToOne
+	@JoinColumn(name = "categoria_id")
+	private CategoriaCocina categoriaCocina;
 }

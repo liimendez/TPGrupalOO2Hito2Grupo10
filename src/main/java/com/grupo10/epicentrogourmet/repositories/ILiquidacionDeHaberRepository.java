@@ -20,8 +20,8 @@ public interface ILiquidacionDeHaberRepository extends JpaRepository<Liquidacion
     @Query("SELECT l FROM LiquidacionDeHaber l JOIN l.unidadVenta uv JOIN uv.festivales f WHERE uv.id = :unidadVentaId AND f.id = :festivalId")
     List<LiquidacionDeHaber> findByFestivalIdAndUnidadVentaId(@Param("festivalId") Long festivalId, @Param("unidadVentaId") Long unidadVentaId);
 
-    boolean existsByPersonalIdAndFechaLiquidacion(Long personalId, LocalDate fecha);
 
+    boolean existsByPersonal_IdAndFechaLiquidacion(Long personalId, LocalDate fechaLiquidacion);
 
 
 }

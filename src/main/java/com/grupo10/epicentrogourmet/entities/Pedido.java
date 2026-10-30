@@ -16,11 +16,24 @@ public class Pedido {
 
 	private LocalDate fechaPedido;
 
-
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "unidad_venta_id", nullable = false)
 	private UnidadVenta unidadVenta;
 
 	@OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
 	private Set<DetallePedido> detalles = new HashSet<>();
+
+	@Transient
+	public double getTotal() {
+		return detalles.stream()
+				.mapToDouble(d -> d.getCantidad() * d.getPlato().getPrecioVenta())
+				.sum();
+	}
+
+	@Transient
+	public double getCostoTotal() {
+		return detalles.stream()
+				.mapToDouble(d -> d.getCantidad() * d.getPlato().getCostoProduccion())
+				.sum();
+	}
 }

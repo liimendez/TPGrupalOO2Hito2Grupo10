@@ -4,6 +4,7 @@ import com.grupo10.epicentrogourmet.dtos.PersonalDTO;
 import com.grupo10.epicentrogourmet.dtos.RequestPersonalDTO;
 import com.grupo10.epicentrogourmet.entities.*;
 import com.grupo10.epicentrogourmet.helpers.ViewRouteHelper;
+import com.grupo10.epicentrogourmet.repositories.ICategoriaCocinaRepository;
 import com.grupo10.epicentrogourmet.repositories.ILiquidacionDeHaberRepository;
 import com.grupo10.epicentrogourmet.repositories.IPersonalRepository;
 import com.grupo10.epicentrogourmet.repositories.IUnidadVentaRepository;
@@ -44,6 +45,7 @@ public class EmpleadoController {
     @Autowired private PersonalService personalService;
     @Autowired private ILiquidacionDeHaberRepository liquidacionRepository;
     @Autowired private ILiquidacionDeHaberService liquidacionDeHaberService;
+    @Autowired private ICategoriaCocinaRepository categoriaCocinaRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -99,6 +101,7 @@ public class EmpleadoController {
         model.addAttribute("empleados", empleados);
         model.addAttribute("filtro", filtro);
         model.addAttribute("unidad", uv);
+        model.addAttribute("categoriasCocina", categoriaCocinaRepository.findAll());
         if (!model.containsAttribute("nuevoEmpleado")) {
             model.addAttribute("nuevoEmpleado", new RequestPersonalDTO());
         }
@@ -117,14 +120,14 @@ public class EmpleadoController {
             dto.setFechaNacimiento(req.getFechaNacimiento());
             dto.setFechaIngreso(req.getFechaIngreso());
             dto.setTurno(req.getTurno());
-            dto.setCategoria(req.getCategoria());
-            dto.setEspecialidad(req.getEspecialidad());
+            dto.setCategoria(req.getCategoria()); // EJECUTIVO / AYUDANTE / LAVAPLATOS
             personalService.altaConUsuario(req.getTipoPersonal(), dto, uv.getId());
             return "redirect:" + ViewRouteHelper.EMPLEADO_ROUTE;
         } catch (IllegalArgumentException e) {
             model.addAttribute("unidad", uv);
             model.addAttribute("empleados", personalRepository.findByUnidadVentaId(uv.getId()));
             model.addAttribute("nuevoEmpleado", req);
+            model.addAttribute("categoriasCocina", categoriaCocinaRepository.findAll());
             model.addAttribute("error", e.getMessage());
             return ViewRouteHelper.EMPLEADO_LISTA;
         }
@@ -156,10 +159,16 @@ public class EmpleadoController {
         req.setDni(p.getDni());
         req.setEmail(p.getCredenciales() != null ? p.getCredenciales().getCorreo() : "");
         req.setFechaNacimiento(p.getFechaNacimiento()); req.setFechaIngreso(p.getFechaIngreso());
-        // FIX: usar tipoPersonal
-        req.setTipoPersonal(p.getTipoPersonal() != null ? p.getTipoPersonal().name() : "CAJERO");
-        model.addAttribute("empleadoId", id); model.addAttribute("nuevoEmpleado", req);
-        model.addAttribute("unidad", uv); model.addAttribute("personal", p);
+        if(p instanceof Cajero) req.setTipoPersonal("CAJERO");
+        else if(p instanceof Cocinero c) {
+            req.setTipoPersonal("COCINERO");
+            if(c.getCategoriaCocina() != null) req.setCategoria(c.getCategoriaCocina().getNombre());
+        }
+        model.addAttribute("empleadoId", id);
+        model.addAttribute("nuevoEmpleado", req);
+        model.addAttribute("unidad", uv);
+        model.addAttribute("personal", p);
+        model.addAttribute("categoriasCocina", categoriaCocinaRepository.findAll());
         return ViewRouteHelper.EMPLEADO_EDITAR;
     }
 
@@ -170,25 +179,31 @@ public class EmpleadoController {
         validarQueEsDeMiUnidad(p);
 
         String tipoNuevo = req.getTipoPersonal();
-        String tipoViejo = p.getTipoPersonal() != null ? p.getTipoPersonal().name() : "";
+        String tipoViejo = p instanceof Cajero ? "CAJERO" : "COCINERO";
 
         if (!tipoViejo.equals(tipoNuevo)) {
             if (p instanceof Cocinero) {
                 entityManager.createNativeQuery("DELETE FROM cocinero WHERE id = :id").setParameter("id", id).executeUpdate();
             } else if (p instanceof Cajero) {
                 entityManager.createNativeQuery("DELETE FROM cajero WHERE id = :id").setParameter("id", id).executeUpdate();
-            } else if (p instanceof Lavaplatos) {
-                entityManager.createNativeQuery("DELETE FROM lavaplatos WHERE id = :id").setParameter("id", id).executeUpdate();
-            } else if (p instanceof Ayudante) {
-                entityManager.createNativeQuery("DELETE FROM ayudante WHERE id = :id").setParameter("id", id).executeUpdate();
             }
-            switch(tipoNuevo) {
-                case "LAVAPLATOS" -> entityManager.createNativeQuery("INSERT INTO lavaplatos (id) VALUES (:id)").setParameter("id", id).executeUpdate();
-                case "AYUDANTE" -> entityManager.createNativeQuery("INSERT INTO ayudante (id) VALUES (:id)").setParameter("id", id).executeUpdate();
-                case "CAJERO" -> entityManager.createNativeQuery("INSERT INTO cajero (id, turno) VALUES (:id, 'MANIANA')").setParameter("id", id).executeUpdate();
-                case "COCINERO" -> entityManager.createNativeQuery("INSERT INTO cocinero (id, categoria, especialidad) VALUES (:id, 'GENERAL', 'GENERAL')").setParameter("id", id).executeUpdate();
+            if("CAJERO".equals(tipoNuevo)) {
+                entityManager.createNativeQuery("INSERT INTO cajero (id, turno) VALUES (:id, 'MANIANA')").setParameter("id", id).executeUpdate();
+            } else {
+                Long catId = 3L;
+                if(req.getCategoria() != null){
+                    var cat = categoriaCocinaRepository.findByNombreIgnoreCase(req.getCategoria()).orElse(null);
+                    if(cat != null) catId = cat.getId();
+                }
+                entityManager.createNativeQuery("INSERT INTO cocinero (id, categoria_id) VALUES (:id, :catId)")
+                        .setParameter("id", id).setParameter("catId", catId).executeUpdate();
             }
-            p.setTipoPersonal(PersonalType.valueOf(tipoNuevo));
+        } else if(p instanceof Cocinero coc && req.getCategoria() != null){
+            var cat = categoriaCocinaRepository.findByNombreIgnoreCase(req.getCategoria()).orElse(null);
+            if(cat != null){
+                coc.setCategoriaCocina(cat);
+                personalRepository.save(p);
+            }
         }
 
         p.setNombre(req.getNombre()); p.setApellido(req.getApellido()); p.setDni(req.getDni());
@@ -208,7 +223,7 @@ public class EmpleadoController {
         var uv = p.getUnidadAsignada();
         if(uv == null) throw new RuntimeException("Empleado " + id + " sin unidad");
         var hoy = LocalDate.now();
-        if(liquidacionRepository.existsByPersonalIdAndFechaLiquidacion(id, hoy)) {
+        if(liquidacionRepository.existsByPersonal_IdAndFechaLiquidacion(id, LocalDate.now())) {
             return "redirect:/empleado/liquidaciones/" + id;
         }
         var liq = liquidacionDeHaberService.liquidar(p.getId(), uv.getId());

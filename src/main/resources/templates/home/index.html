@@ -8,6 +8,7 @@
     <style>
         body{background:#1a1d23 !important}
         .card-fest{box-shadow:0 0 30px rgba(0,0,0,.4), 0 0 0 1px rgba(250,204,21,.15)}
+        .dot { font-size: 22px; line-height: 1; }
     </style>
 </head>
 <body class="bg-dark text-light">
@@ -22,7 +23,6 @@
     </div>
 </nav>
 <div class="container py-5">
-    <!-- PANEL CAJERO - NUEVO -->
     <div th:if="${esCajero && miUnidad != null}" class="card rounded-4 p-4 mb-4 shadow-lg" style="background:#2c2c2c; border:2px solid #facc15; box-shadow:0 0 20px rgba(250,204,21,.3);">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
@@ -31,7 +31,7 @@
             </div>
             <div class="d-flex gap-2">
                 <a th:href="@{'/unidad-venta/' + ${miUnidad.id}}" class="btn btn-warning rounded-pill fw-bold text-dark px-4"><i class="bi bi-shop"></i> Ver Carta y Pedir</a>
-                <a th:href="@{'/pedido/unidad/' + ${miUnidad.id}}" class="btn btn-outline-warning rounded-pill fw-bold px-4"><i class="bi bi-receipt"></i> Mis Pedidos - $106600</a>
+                <a th:href="@{'/pedido/unidad/' + ${miUnidad.id}}" class="btn btn-outline-warning rounded-pill fw-bold px-4"><i class="bi bi-receipt"></i> Mis Pedidos </a>
             </div>
         </div>
     </div>
@@ -42,23 +42,17 @@
             <p class="text-light opacity-75 small mb-0">Listado de festivales registrados - Solo ADMIN puede editar/baja</p>
         </div>
         <div sec:authorize="hasRole('EMPLEADO')" class="ms-auto">
-            <a th:href="@{/empleado/mi-informacion}" class="btn btn-warning fw-bold text-dark">
-                👤 Mi Información
-            </a>
+            <a th:href="@{/empleado/mi-informacion}" class="btn btn-warning fw-bold text-dark">👤 Mi Información</a>
         </div>
         <div class="d-flex gap-2 flex-wrap align-items-center">
-            <a th:if="${username == 'anonymous'}" class="btn btn-warning btn-sm fw-bold text-dark px-3" th:href="@{/unidad-venta/new}">
-                Registrar Unidad de Venta
-            </a>
+            <a th:if="${username == 'anonymous'}" class="btn btn-warning btn-sm fw-bold text-dark px-3" th:href="@{/unidad-venta/new}">Registrar Unidad de Venta</a>
             <div sec:authorize="hasRole('ADMIN')" class="d-flex gap-2">
                 <a href="/usuarios/lista" class="btn btn-outline-light btn-sm">Usuarios</a>
                 <a href="/festival/new" class="btn btn-warning btn-sm fw-bold text-dark">Registrar Festival</a>
             </div>
             <div sec:authorize="hasRole('RESPONSABLE')" class="d-flex gap-2">
                 <a href="/empleado/listaEmpleado" class="btn btn-warning fw-bold text-dark shadow-sm">Empleados</a>
-                <a href="/responsable/unidades" class="btn btn-dark fw-bold rounded-3 px-3" style="border:2px solid #facc15;color:#facc15;box-shadow:0 0 12px rgba(250,204,21,.4)">
-                    <i class="bi bi-shop me-1"></i> Mis Unidades
-                </a>
+                <a href="/responsable/unidades" class="btn btn-dark fw-bold rounded-3 px-3" style="border:2px solid #facc15;color:#facc15;box-shadow:0 0 12px rgba(250,204,21,.4)"><i class="bi bi-shop me-1"></i> Mis Unidades</a>
             </div>
         </div>
     </div>
@@ -79,6 +73,7 @@
                         <th class="py-3 px-4 text-warning">Temporada</th>
                         <th class="py-3 px-4 text-warning">Fecha Inicio</th>
                         <th class="py-3 px-4 text-warning">Fecha Fin</th>
+                        <th class="py-3 px-4 text-warning">Estado</th>
                         <th class="py-3 px-4 text-center text-warning">Acciones</th>
                     </tr>
                     </thead>
@@ -89,6 +84,16 @@
                         <td class="px-4 text-white" th:text="${festival.temporada}"></td>
                         <td class="px-4 text-white-50" th:text="${festival.fechaInicio}"></td>
                         <td class="px-4 text-white-50" th:text="${festival.fechaFin}"></td>
+                        <td class="px-4 text-center">
+                            <span th:if="${festival.fechaInicio != null and festival.fechaFin != null and T(java.time.LocalDate).now() >= festival.fechaInicio and T(java.time.LocalDate).now() <= festival.fechaFin}"
+                                  class="badge bg-success rounded-pill px-3" style="box-shadow:0 0 10px rgba(25,135,84,.6)">
+                                <span class="dot">●</span> Activo
+                            </span>
+                            <span th:unless="${festival.fechaInicio != null and festival.fechaFin != null and T(java.time.LocalDate).now() >= festival.fechaInicio and T(java.time.LocalDate).now() <= festival.fechaFin}"
+                                  class="badge bg-danger rounded-pill px-3" style="box-shadow:0 0 10px rgba(220,53,69,.6)">
+                                <span class="dot">●</span> Inactivo
+                            </span>
+                        </td>
                         <td class="px-4 text-center">
                             <div class="d-flex gap-1 justify-content-center">
                                 <a th:href="@{'/festival/' + ${festival.id}}" class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-bold">Ver</a>

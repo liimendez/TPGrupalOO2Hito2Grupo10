@@ -28,7 +28,7 @@
             </div>
         </div>
 
-        <!-- DATOS EMPLEADO - ARREGLADO PARA CAJERO/COCINERO -->
+        <!-- DATOS EMPLEADO - ARREGLADO PARA NUEVO MODELO CategoriaCocina -->
         <div class="p-3 border-bottom">
             <div class="row small">
                 <div class="col-6">
@@ -36,8 +36,9 @@
                     <strong>DNI:</strong> <span th:text="${personal.dni}">00.000.000</span><br>
 
                     <span th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cocinero)}">
-                        <strong>Categoría:</strong> <span th:text="${personal.categoria}">COCINERO</span> -
-                        <span th:text="${personal.especialidad}"></span>
+                        <strong>Categoría:</strong>
+                        <span th:text="${personal.categoriaCocina.nombre}">AYUDANTE</span>
+                        - Plus $ <span th:text="${#numbers.formatDecimal(personal.categoriaCocina.plusFijo, 1, 0)}">100000</span>
                     </span>
                     <span th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cajero)}">
                         <strong>Categoría:</strong> <span th:text="'CAJERO - Turno ' + ${personal.turno}">CAJERO</span>
@@ -61,7 +62,18 @@
             <tbody class="small">
             <tr><td>1000</td><td>Sueldo Básico Convenio</td><td class="text-end">30</td><td class="text-end">100.000,00</td><td class="text-end">-</td></tr>
             <tr><td>1001</td><td>Antigüedad (<span th:text="${anios}">2</span> años x $5.000)</td><td class="text-end" th:text="${anios}">2</td><td class="text-end" th:text="${anios * 5000 + ',00'}">10.000,00</td><td class="text-end">-</td></tr>
-            <tr><td>1002</td><td>Plus por Categoría</td><td class="text-end">1</td><td class="text-end">50.000,00</td><td class="text-end">-</td></tr>
+            <tr>
+                <td>1002</td>
+                <td>Plus por Categoría
+                    <span th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cocinero)}" th:text="'- ' + ${personal.categoriaCocina.nombre}"></span>
+                </td>
+                <td class="text-end">1</td>
+                <td class="text-end">
+                    <span th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cocinero)}" th:text="${#numbers.formatDecimal(personal.categoriaCocina.plusFijo, 1, 2)}">100.000,00</span>
+                    <span th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cajero)}">0,00</span>
+                </td>
+                <td class="text-end">-</td>
+            </tr>
             <tr><td>1003</td><td>Factor Festival (50% - según PDF punto 4)</td><td class="text-end">0,5</td><td class="text-end">-</td><td class="text-end">-</td></tr>
             <tr class="fw-bold table-light"><td colspan="3" class="text-end">TOTAL BRUTO</td><td class="text-end" th:text="'$ ' + ${#numbers.formatDecimal(sueldo, 1, 2)}">$ 130.000,00</td><td></td></tr>
             </tbody>
@@ -69,7 +81,7 @@
 
         <div class="p-3">
             <div class="row">
-                <div class="col-8"><div class="border p-2 small"><strong>Observaciones:</strong> Liquidación generada según fórmula oficial: (Sueldo Base + Plus + Antigüedad) * 50%.</div></div>
+                <div class="col-8"><div class="border p-2 small"><strong>Observaciones:</strong> Liquidación generada según fórmula oficial: (Sueldo Base + Plus + Antigüedad) * 50% * Tramos. Categorías: CHEF EJECUTIVO 150k / AYUDANTE 100k / LAVAPLATOS 50k.</div></div>
                 <div class="col-4"><div class="bg-dark text-white p-3 text-center"><small class="d-block">NETO A COBRAR</small><h3 class="mb-0" th:text="'$ ' + ${#numbers.formatDecimal(sueldo, 1, 2)}">$ 130.000,00</h3></div></div>
             </div>
         </div>

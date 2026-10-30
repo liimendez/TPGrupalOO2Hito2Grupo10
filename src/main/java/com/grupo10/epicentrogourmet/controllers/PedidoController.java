@@ -4,7 +4,7 @@ import com.grupo10.epicentrogourmet.dtos.ReporteVentaDTO;
 import com.grupo10.epicentrogourmet.entities.*;
 import com.grupo10.epicentrogourmet.repositories.*;
 import com.grupo10.epicentrogourmet.services.IPedidoService;
-
+import java.util.Map;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -77,7 +77,6 @@ public class PedidoController {
         return mav;
     }
 
-
     @PreAuthorize("hasAnyAuthority('EMPLEADO','ROLE_EMPLEADO','RESPONSABLE','ROLE_RESPONSABLE')")
     @GetMapping("/lista")
     @Transactional(readOnly = true)
@@ -89,7 +88,8 @@ public class PedidoController {
         var pedidos = pedidoRepository.findByUnidadVentaIdConDetalles(uv.getId());
         ModelAndView mav = new ModelAndView("pedido/lista");
         mav.addObject("unidadVenta", uv);
-        mav.addObject("pedidos", pedidos);
+        // FIX: pasamos DTOs, no Entities
+        mav.addObject("tickets", pedidoService.toDTOList(pedidos));
         return mav;
     }
 
@@ -101,7 +101,8 @@ public class PedidoController {
         var pedidos = pedidoRepository.findByUnidadVentaIdConDetalles(unidadVentaId);
         ModelAndView mav = new ModelAndView("pedido/lista");
         mav.addObject("unidadVenta", uv);
-        mav.addObject("pedidos", pedidos);
+        // FIX: acá estaba el 500 - ahora mandamos tickets
+        mav.addObject("tickets", pedidoService.toDTOList(pedidos));
         return mav;
     }
 
@@ -111,14 +112,12 @@ public class PedidoController {
     public ModelAndView guardarPedido(@RequestParam Long unidadVentaId,
                                       @RequestParam Long platoId,
                                       @RequestParam int cantidad) {
-        // VALIDACION CAJERO - FIX PARA QUE COCINERA NO PUEDA
         String correo = SecurityContextHolder.getContext().getAuthentication().getName();
         Personal personal = personalRepository.findByCredencialesCorreo(correo)
                 .orElseThrow(() -> new RuntimeException("Empleado no encontrado: " + correo));
         if(!(personal instanceof Cajero)){
             throw new AccessDeniedException("Solo cajeros pueden dar de alta pedidos - Cocinero no autorizado");
         }
-
         var plato = platoRepository.findById(platoId).orElseThrow();
         if(!plato.isActivo()){
             throw new RuntimeException("Plato dado de baja lógica");
@@ -145,5 +144,36 @@ public class PedidoController {
         ModelAndView mav = new ModelAndView("pedido/reporte-recaudacion");
         mav.addObject("reporte", reporte);
         return mav;
+    }
+
+    @PreAuthorize("hasAnyAuthority('EMPLEADO','ROLE_EMPLEADO')")
+    @PostMapping("/saveMulti")
+    @Transactional
+    public String saveMulti(@RequestParam Long unidadVentaId, @RequestParam Map<String,String> allParams) {
+        UnidadVenta unidad = unidadVentaRepository.findById(unidadVentaId).orElseThrow();
+        Pedido pedido = new Pedido();
+        pedido.setUnidadVenta(unidad);
+        pedido.setFechaPedido(LocalDate.now());
+
+        int agregados = 0;
+        for (String key : allParams.keySet()) {
+            if (!key.startsWith("cant_")) continue;
+            int cant = 0;
+            try { cant = Integer.parseInt(allParams.get(key)); } catch(Exception e){ continue; }
+            if (cant <= 0) continue;
+            Long platoId = Long.parseLong(key.substring(5));
+            Plato plato = platoRepository.findById(platoId).orElseThrow();
+            DetallePedido det = new DetallePedido();
+            det.setPlato(plato);
+            det.setCantidad(cant);
+            det.setPedido(pedido);
+            pedido.getDetalles().add(det);
+            agregados++;
+        }
+        if (agregados == 0) {
+            return "redirect:/pedido/new?unidadId=" + unidadVentaId + "&error=vacio";
+        }
+        pedidoRepository.save(pedido);
+        return "redirect:/pedido/unidad/" + unidadVentaId + "?success";
     }
 }
