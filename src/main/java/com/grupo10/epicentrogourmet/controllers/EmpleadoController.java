@@ -204,7 +204,6 @@ public class EmpleadoController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         boolean esEmpleado = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("EMPLEADO") || a.getAuthority().equals("ROLE_EMPLEADO"));
-
         if (esEmpleado) {
             redirectAttributes.addFlashAttribute("error", "Acceso denegado: Solo el responsable puede guardar empleados.");
             return "redirect:/empleado/lista";
@@ -225,16 +224,26 @@ public class EmpleadoController {
             if("CAJERO".equals(tipoNuevo)) {
                 entityManager.createNativeQuery("INSERT INTO cajero (id, turno) VALUES (:id, 'MANIANA')").setParameter("id", id).executeUpdate();
             } else {
-                Long catId = 3L;
-                if(req.getCategoria() != null){
-                    var cat = categoriaCocinaRepository.findByNombreIgnoreCase(req.getCategoria()).orElse(null);
+                Long catId = 1L; // COCINERO por defecto
+                if(req.getCategoria() != null && !req.getCategoria().isBlank()){
+                    String catReq = req.getCategoria().toUpperCase();
+                    String nombreBuscar = "LAVAPLATOS";
+                    if(catReq.equals("COCINERO")) nombreBuscar = "COCINERO";
+                    else if(catReq.contains("AYUDANTE")) nombreBuscar = "AYUDANTE";
+                    var cat = categoriaCocinaRepository.findByNombreIgnoreCase(nombreBuscar).orElse(null);
                     if(cat != null) catId = cat.getId();
+                } else if(p instanceof Cocinero cocOld && cocOld.getCategoriaCocina() != null) {
+                    catId = cocOld.getCategoriaCocina().getId(); // mantiene la vieja si no viene nada
                 }
                 entityManager.createNativeQuery("INSERT INTO cocinero (id, categoria_id) VALUES (:id, :catId)")
                         .setParameter("id", id).setParameter("catId", catId).executeUpdate();
             }
-        } else if(p instanceof Cocinero coc && req.getCategoria() != null){
-            var cat = categoriaCocinaRepository.findByNombreIgnoreCase(req.getCategoria()).orElse(null);
+        } else if(p instanceof Cocinero coc && req.getCategoria() != null && !req.getCategoria().isBlank()){
+            String catReq = req.getCategoria().toUpperCase();
+            String nombreBuscar = "LAVAPLATOS";
+            if(catReq.equals("COCINERO")) nombreBuscar = "COCINERO";
+            else if(catReq.contains("AYUDANTE")) nombreBuscar = "AYUDANTE";
+            var cat = categoriaCocinaRepository.findByNombreIgnoreCase(nombreBuscar).orElse(null);
             if(cat != null){
                 coc.setCategoriaCocina(cat);
                 personalRepository.save(p);

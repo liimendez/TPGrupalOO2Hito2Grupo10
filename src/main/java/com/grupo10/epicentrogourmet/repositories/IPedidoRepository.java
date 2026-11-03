@@ -15,7 +15,6 @@ import java.util.Optional;
 public interface IPedidoRepository extends JpaRepository<Pedido, Serializable> {
 
     Optional<Pedido> findById(Long id);
-    List<Pedido> findByUnidadVentaId(Long unidadVentaId);
 
 
     @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.detalles d LEFT JOIN FETCH d.plato WHERE p.unidadVenta.id = :unidadVentaId")

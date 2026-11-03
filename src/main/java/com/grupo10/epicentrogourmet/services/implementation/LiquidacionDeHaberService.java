@@ -34,21 +34,32 @@ public class LiquidacionDeHaberService implements ILiquidacionDeHaberService {
     @Override public LiquidacionDeHaber insertOrUpdate(LiquidacionDeHaber l) { return liquidacionRepo.save(l); }
     @Override public boolean remove(Long id) { if(liquidacionRepo.existsById(id)){ liquidacionRepo.deleteById(id); return true;} return false; }
 
+    // FIX: calcula dias reales trabajados dentro del festival
+    private long calcularDiasReales(Personal p, UnidadVenta uv) {
+        long dias = 30;
+        try {
+            if (uv != null && uv.getFestivales() != null && !uv.getFestivales().isEmpty()) {
+                Festival fest = uv.getFestivales().iterator().next();
+                if (fest.getFechaInicio() != null && fest.getFechaFin() != null) {
+                    LocalDate inicioReal = fest.getFechaInicio();
+                    // Si el empleado entró después que empezó el festival, cobra desde su ingreso
+                    if (p != null && p.getFechaIngreso() != null && p.getFechaIngreso().isAfter(inicioReal)) {
+                        inicioReal = p.getFechaIngreso();
+                    }
+                    long diff = ChronoUnit.DAYS.between(inicioReal, fest.getFechaFin());
+                    if (diff > 0) dias = diff;
+                    else dias = 1;
+                }
+            }
+        } catch (Exception e) {}
+        return dias;
+    }
+
     @Override
     public double calcularTotalACobrar(Long idPersonal, Long idUnidadVenta) {
-        long dias = 30;
-        if (idUnidadVenta != null) {
-            try {
-                UnidadVenta uv = unidadVentaRepo.findById(idUnidadVenta).orElse(null);
-                if (uv != null && uv.getFestivales() != null && !uv.getFestivales().isEmpty()) {
-                    Festival fest = uv.getFestivales().iterator().next();
-                    if (fest.getFechaInicio() != null && fest.getFechaFin() != null) {
-                        long diff = ChronoUnit.DAYS.between(fest.getFechaInicio(), fest.getFechaFin());
-                        if (diff > 0) dias = diff;
-                    }
-                }
-            } catch (Exception e) {}
-        }
+        Personal p = personalRepo.findById(idPersonal).orElse(null);
+        UnidadVenta uv = idUnidadVenta != null ? unidadVentaRepo.findById(idUnidadVenta).orElse(null) : null;
+        long dias = calcularDiasReales(p, uv);
         return calcularTotalACobrarConDias(idPersonal, dias);
     }
 
@@ -85,14 +96,7 @@ public class LiquidacionDeHaberService implements ILiquidacionDeHaberService {
         Personal p = personalRepo.findById(idPersonal).orElseThrow();
         UnidadVenta uv = unidadVentaRepo.findById(idUnidadVenta).orElseThrow();
 
-        long dias = 30;
-        if (uv.getFestivales() != null && !uv.getFestivales().isEmpty()) {
-            Festival fest = uv.getFestivales().iterator().next();
-            if (fest.getFechaInicio() != null && fest.getFechaFin() != null) {
-                long diff = ChronoUnit.DAYS.between(fest.getFechaInicio(), fest.getFechaFin());
-                if(diff > 0) dias = diff;
-            }
-        }
+        long dias = calcularDiasReales(p, uv);
 
         double total = calcularTotalACobrarConDias(idPersonal, dias);
 
@@ -136,7 +140,7 @@ public class LiquidacionDeHaberService implements ILiquidacionDeHaberService {
             tableInfo.addCell(new Paragraph("DNI: " + liq.getPersonal().getDni(), textoNormal));
             tableInfo.addCell(new Paragraph("Fecha de Liquidación: " + liq.getFechaLiquidacion(), textoNormal));
             tableInfo.addCell(new Paragraph("Unidad de Venta: " + (liq.getUnidadVenta() != null ? liq.getUnidadVenta().getNombreComercial() : "N/A"), textoNormal));
-            tableInfo.addCell(new Paragraph("Días Trabajados: " + liq.getDiasDeTrabajo(), textoNormal));
+            tableInfo.addCell(new Paragraph("Días Trabajados: " + liq.getDiasDeTrabajo() + " (desde " + (liq.getPersonal().getFechaIngreso() != null ? liq.getPersonal().getFechaIngreso() : "inicio festival") + ")", textoNormal));
             tableInfo.addCell(new Paragraph("Fórmula: (int(dias/15)+1) * 50% * (Base+Plus/Antig)", textoNormal));
             tableInfo.setSpacingAfter(20);
             document.add(tableInfo);

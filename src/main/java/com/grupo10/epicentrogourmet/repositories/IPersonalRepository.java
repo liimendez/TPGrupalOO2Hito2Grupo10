@@ -26,11 +26,5 @@ public interface IPersonalRepository extends JpaRepository<Personal, Long> {
             "WHERE p.unidad_asignada_id = :idUnidad", nativeQuery = true)
     List<Object[]> findRawByUnidad(Long idUnidad);
 
-    @Query(value = "SELECT p.id, p.nombre, p.apellido, p.dni, p.activo, p.unidad_asignada_id, u.correo " +
-            "FROM personal p LEFT JOIN usuario u ON p.usuario_id = u.id " +
-            "WHERE p.unidad_asignada_id = :idUnidad", nativeQuery = true)
-    List<Object[]> findRawByUnidadAndActivoTrue(Long idUnidad);
 
-    @Query("SELECT p FROM Personal p WHERE p.credenciales.correo = :correo")
-    Optional<Personal> findByCredencialesCorreoOptional(String correo);
 }
