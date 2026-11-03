@@ -41,6 +41,10 @@ public class SecurityConfiguration {
                     auth.requestMatchers("/festival/new", "/festival/editar/**", "/festival/eliminar/**",
                             "/festival/save", "/usuarios/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN");
 
+                    auth.requestMatchers("/empleado/mi-informacion", "/empleado/mi-informacion/**").authenticated();
+
+                    auth.requestMatchers("/empleado/**").hasAnyAuthority("RESPONSABLE", "ROLE_RESPONSABLE");
+
                     auth.requestMatchers("/mi-unidad/**", "/unidad-venta/detalle/**", "/unidad-venta/**")
                             .hasAnyAuthority("RESPONSABLE", "ROLE_RESPONSABLE", "ADMIN", "ROLE_ADMIN", "EMPLEADO", "ROLE_EMPLEADO");
 

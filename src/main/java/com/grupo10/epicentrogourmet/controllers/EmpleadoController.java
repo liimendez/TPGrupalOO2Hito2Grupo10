@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -109,7 +110,18 @@ public class EmpleadoController {
     }
 
     @PostMapping("/agregar")
-    public String agregar(@ModelAttribute("nuevoEmpleado") RequestPersonalDTO req, Model model) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'RESPONSABLE')")
+    public String agregar(@ModelAttribute("nuevoEmpleado") RequestPersonalDTO req, Model model, RedirectAttributes redirectAttributes) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean esEmpleado = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("EMPLEADO") || a.getAuthority().equals("ROLE_EMPLEADO"));
+
+        if (esEmpleado) {
+            redirectAttributes.addFlashAttribute("error", "Acceso denegado: Solo el Responsable puede dar de alta empleados.");
+            return "redirect:/empleado/lista";
+        }
+
         UnidadVenta uv = getUnidadDelLogueado();
         try {
             PersonalDTO dto = new PersonalDTO();
@@ -133,8 +145,20 @@ public class EmpleadoController {
         }
     }
 
-    @PostMapping("/eliminar/{id}") @Transactional
-    public String eliminar(@PathVariable Long id) {
+    @PostMapping("/eliminar/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RESPONSABLE')")
+    @Transactional
+    public String eliminar(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean esEmpleado = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("EMPLEADO") || a.getAuthority().equals("ROLE_EMPLEADO"));
+
+        if (esEmpleado) {
+            redirectAttributes.addFlashAttribute("error", "Acceso denegado: Solo el responsable puede dar de baja empleados.");
+            return "redirect:/empleado/lista";
+        }
+
         var p = personalRepository.findByIdIncludingInactive(id).orElseThrow();
         validarQueEsDeMiUnidad(p);
         personalService.remove(id);
@@ -173,8 +197,19 @@ public class EmpleadoController {
     }
 
     @PostMapping("/editar/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RESPONSABLE')")
     @Transactional
-    public String guardarEdicion(@PathVariable Long id, @ModelAttribute("nuevoEmpleado") RequestPersonalDTO req) {
+    public String guardarEdicion(@PathVariable Long id, @ModelAttribute("nuevoEmpleado") RequestPersonalDTO req, RedirectAttributes redirectAttributes) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean esEmpleado = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("EMPLEADO") || a.getAuthority().equals("ROLE_EMPLEADO"));
+
+        if (esEmpleado) {
+            redirectAttributes.addFlashAttribute("error", "Acceso denegado: Solo el responsable puede guardar empleados.");
+            return "redirect:/empleado/lista";
+        }
+
         var p = personalRepository.findByIdIncludingInactive(id).orElseThrow();
         validarQueEsDeMiUnidad(p);
 
