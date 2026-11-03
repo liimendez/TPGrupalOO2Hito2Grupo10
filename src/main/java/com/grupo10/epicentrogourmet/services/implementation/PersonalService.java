@@ -166,9 +166,11 @@ public class PersonalService implements IPersonalService {
             }
             case "COCINERO", "AYUDANTE", "LAVAPLATOS" -> {
                 Cocinero coc = new Cocinero();
-                // dto.getCategoria trae EJECUTIVO / AYUDANTE / LAVAPLATOS
                 String nombreCat = dto.getCategoria() != null ? dto.getCategoria().toUpperCase() : tipoUpper;
-                if(nombreCat.equals("COCINERO")) nombreCat = "EJECUTIVO";
+                if(nombreCat.equals("COCINERO")) nombreCat = "COCINERO";
+                else if(nombreCat.contains("AYUDANTE")) nombreCat = "AYUDANTE";
+                else nombreCat = "LAVAPLATOS";
+
                 CategoriaCocina cat = categoriaCocinaRepository.findByNombreIgnoreCase(nombreCat)
                         .orElseGet(() -> categoriaCocinaRepository.findByNombreIgnoreCase("LAVAPLATOS").orElse(null));
                 coc.setCategoriaCocina(cat);
