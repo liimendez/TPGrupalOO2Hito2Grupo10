@@ -100,14 +100,39 @@ public class FestivalService implements IFestivalService {
         return new RentabilidadNetaDTO(festivalId, unidadVentaId, gananciaBruta, totalSueldos, canon, rentabilidadNeta);
     }
 
-    // PUNTO 6 - Cálculo de Rentabilidad Neta entre dos fechas
+    // PUNTO 7 - Cálculo de Rentabilidad Neta entre dos fechas
     @Override
     public RentabilidadNetaDTO getRentabilidadNetaEntreFechas(Long festivalId, Long unidadVentaId, LocalDate desde, LocalDate hasta) {
-        List<Pedido> pedidos = pedidoRepository.findByFestivalIdAndUnidadVentaId(festivalId, unidadVentaId).stream().filter(p -> p.getFechaPedido() != null && !p.getFechaPedido().isBefore(desde) && !p.getFechaPedido().isAfter(hasta)).toList();
-        double gananciaBruta = pedidos.stream().mapToDouble(p -> p.getDetalles() == null ? 0 : p.getDetalles().stream().mapToDouble(d -> d.getCantidad() * (d.getPlato().getPrecioVenta() - d.getPlato().getCostoProduccion())).sum()).sum();
-        double totalSueldos = liquidacionRepository.findByFestivalIdAndUnidadVentaId(festivalId, unidadVentaId).stream().mapToDouble(LiquidacionDeHaber::getTotalACobrar).sum();
-        double canon = unidadVentaService.calcularCanon(unidadVentaId);
-        return new RentabilidadNetaDTO(festivalId, unidadVentaId, gananciaBruta, totalSueldos, canon, gananciaBruta - totalSueldos - canon);
+
+        Festival festival = festivalRepository.findById(festivalId)
+                .orElseThrow(() -> new RuntimeException("No se encontro el Festival"));
+
+        if (desde.isBefore(festival.getFechaInicio()) || hasta.isAfter(festival.getFechaFin()) || desde.isAfter(hasta)) {
+            throw new IllegalArgumentException("El rango de fechas debe estar indicado entre el Inicio y el Fin del Festival.");
+        }
+
+        UnidadVenta unidad = unidadVentaRepository.findById(unidadVentaId)
+                .orElseThrow(() -> new RuntimeException("No se encontro la UnidadVenta"));
+
+        List<Pedido> pedidos = pedidoRepository.findPedidosParaRentabilidad(unidad, desde, hasta);
+
+        double gananciaBruta = pedidos.stream()
+                .mapToDouble(p -> p.getDetalles() == null ? 0 : p.getDetalles().stream()
+                        .mapToDouble(d -> d.getCantidad() * (d.getPlato().getPrecioVenta() - d.getPlato().getCostoProduccion()))
+                        .sum())
+                .sum();
+
+        List<LiquidacionDeHaber> liquidaciones = liquidacionRepository.findLiquidacionesParaRentabilidad(unidad, desde, hasta);
+
+        double totalSueldos = liquidaciones.stream()
+                .mapToDouble(LiquidacionDeHaber::getTotalACobrar)
+                .sum();
+
+        double canon = costosService.calcularCanon(unidadVentaId).getTotalCanon().doubleValue();
+
+        double rentabilidadNeta = gananciaBruta - totalSueldos - canon;
+
+        return new RentabilidadNetaDTO(festivalId, unidadVentaId, gananciaBruta, totalSueldos, canon, rentabilidadNeta);
     }
 
     // PUNTO 8 - Plato Estrella

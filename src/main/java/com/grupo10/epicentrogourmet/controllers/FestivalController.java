@@ -18,6 +18,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -203,11 +204,45 @@ public class FestivalController {
 
         ModelAndView mav = new ModelAndView("responsable/rentabilidad-neta");
 
+        Festival festival = festivalService.findById(festivalId)
+                .orElseThrow(() -> new RuntimeException("Festival no encontrado"));
         RentabilidadNetaDTO rentabilidad = festivalService.getRentabilidadNeta(festivalId, unidadVentaId);
 
         mav.addObject("rentabilidad", rentabilidad);
         mav.addObject("festivalId", festivalId);
         mav.addObject("unidadVentaId", unidadVentaId);
+        mav.addObject("festival", festival);
+        mav.addObject("desde", festival.getFechaInicio());
+        mav.addObject("hasta", festival.getFechaFin());
+
+        return mav;
+    }
+
+    @GetMapping("/rentabilidad/fechas")
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public ModelAndView verRentabilidadNetaEntreFechas(
+            @RequestParam Long festivalId, @RequestParam Long unidadVentaId,
+            @RequestParam LocalDate desde, @RequestParam LocalDate hasta) {
+
+        ModelAndView mav = new ModelAndView("responsable/rentabilidad-neta");
+
+        Festival festival = festivalService.findById(festivalId)
+                .orElseThrow(() -> new RuntimeException("Festival no encontrado"));
+
+        mav.addObject("festivalId", festivalId);
+        mav.addObject("unidadVentaId", unidadVentaId);
+        mav.addObject("festival", festival);
+        mav.addObject("desde", desde);
+        mav.addObject("hasta", hasta);
+
+        try {
+            RentabilidadNetaDTO rentabilidad = festivalService.getRentabilidadNetaEntreFechas(festivalId, unidadVentaId, desde, hasta);
+            mav.addObject("rentabilidad", rentabilidad);
+        } catch (IllegalArgumentException e) {
+            mav.addObject("error", e.getMessage());
+            RentabilidadNetaDTO rentabilidadDefault = festivalService.getRentabilidadNeta(festivalId, unidadVentaId);
+            mav.addObject("rentabilidad", rentabilidadDefault);
+        }
 
         return mav;
     }
