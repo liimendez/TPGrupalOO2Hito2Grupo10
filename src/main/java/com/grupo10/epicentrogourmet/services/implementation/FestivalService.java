@@ -9,6 +9,7 @@ import java.util.Optional;
 import com.grupo10.epicentrogourmet.dtos.PlatoDTO;
 import com.grupo10.epicentrogourmet.dtos.ReporteMayoresCanonDTO;
 import com.grupo10.epicentrogourmet.entities.*;
+import com.grupo10.epicentrogourmet.services.ICostosService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,7 @@ public class FestivalService implements IFestivalService {
     @Autowired private ILiquidacionDeHaberRepository liquidacionRepository;
     @Autowired private IUnidadVentaRepository unidadVentaRepository;
     @Autowired private IUnidadVentaService unidadVentaService;
+    @Autowired private ICostosService costosService;
 
     @Override public List<Festival> getAll() { return festivalRepository.findAll(); }
     @Override public Optional<Festival> findById(Long id) { return festivalRepository.findById(id); }
@@ -69,17 +71,36 @@ public class FestivalService implements IFestivalService {
         return new ReporteVentaDTO(festival.getId(), festival.getNombre(), total, pedidos.size());
     }
 
-    // PUNTO 6 y 7 - Rentabilidad
+    // PUNTO 6 - Cálculo de Rentabilidad Neta
     @Override
     public RentabilidadNetaDTO getRentabilidadNeta(Long festivalId, Long unidadVentaId) {
-        UnidadVenta unidad = unidadVentaRepository.findById(unidadVentaId).orElseThrow(() -> new RuntimeException("Unidad no encontrada"));
-        List<Pedido> pedidos = pedidoRepository.findByFestivalIdAndUnidadVentaId(festivalId, unidadVentaId);
-        double gananciaBruta = pedidos.stream().mapToDouble(p -> p.getDetalles() == null ? 0 : p.getDetalles().stream().mapToDouble(d -> d.getCantidad() * (d.getPlato().getPrecioVenta() - d.getPlato().getCostoProduccion())).sum()).sum();
-        double totalSueldos = liquidacionRepository.findByFestivalIdAndUnidadVentaId(festivalId, unidadVentaId).stream().mapToDouble(LiquidacionDeHaber::getTotalACobrar).sum();
-        double canon = unidadVentaService.calcularCanon(unidadVentaId);
-        return new RentabilidadNetaDTO(festivalId, unidadVentaId, gananciaBruta, totalSueldos, canon, gananciaBruta - totalSueldos - canon);
+
+        Festival festival = festivalRepository.findById(festivalId).orElseThrow(() -> new RuntimeException("No se encontro el Festival"));
+
+        UnidadVenta unidad = unidadVentaRepository.findById(unidadVentaId).orElseThrow(() -> new RuntimeException("No se encontro la UnidadVenta"));
+
+        List<Pedido> pedidos = pedidoRepository.findPedidosParaRentabilidad(unidad, festival.getFechaInicio(), festival.getFechaFin());
+
+        double gananciaBruta = pedidos.stream()
+                .mapToDouble(p -> p.getDetalles() == null ? 0 : p.getDetalles().stream()
+                        .mapToDouble(d -> d.getCantidad() * (d.getPlato().getPrecioVenta() - d.getPlato().getCostoProduccion()))
+                        .sum())
+                .sum();
+
+        List<LiquidacionDeHaber> liquidaciones = liquidacionRepository.findLiquidacionesParaRentabilidad(unidad, festival.getFechaInicio(), festival.getFechaFin());
+
+        double totalSueldos = liquidaciones.stream()
+                .mapToDouble(LiquidacionDeHaber::getTotalACobrar)
+                .sum();
+
+        double canon = costosService.calcularCanon(unidadVentaId).getTotalCanon().doubleValue();
+
+        double rentabilidadNeta = gananciaBruta - totalSueldos - canon;
+
+        return new RentabilidadNetaDTO(festivalId, unidadVentaId, gananciaBruta, totalSueldos, canon, rentabilidadNeta);
     }
 
+    // PUNTO 6 - Cálculo de Rentabilidad Neta entre dos fechas
     @Override
     public RentabilidadNetaDTO getRentabilidadNetaEntreFechas(Long festivalId, Long unidadVentaId, LocalDate desde, LocalDate hasta) {
         List<Pedido> pedidos = pedidoRepository.findByFestivalIdAndUnidadVentaId(festivalId, unidadVentaId).stream().filter(p -> p.getFechaPedido() != null && !p.getFechaPedido().isBefore(desde) && !p.getFechaPedido().isAfter(hasta)).toList();
