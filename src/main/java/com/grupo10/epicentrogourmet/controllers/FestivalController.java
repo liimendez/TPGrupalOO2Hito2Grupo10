@@ -1,5 +1,6 @@
 package com.grupo10.epicentrogourmet.controllers;
 
+import com.grupo10.epicentrogourmet.dtos.RentabilidadNetaDTO;
 import com.grupo10.epicentrogourmet.dtos.RequestFestivalDTO;
 import com.grupo10.epicentrogourmet.entities.Festival;
 import com.grupo10.epicentrogourmet.entities.Pedido;
@@ -194,5 +195,20 @@ public class FestivalController {
         model.addAttribute("festival", festival);
         model.addAttribute("ranking", ranking);
         return "festival/ranking";
+    }
+
+    @GetMapping("/rentabilidad")
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public ModelAndView verRentabilidadNeta(@RequestParam Long festivalId, @RequestParam Long unidadVentaId) {
+
+        ModelAndView mav = new ModelAndView("responsable/rentabilidad-neta");
+
+        RentabilidadNetaDTO rentabilidad = festivalService.getRentabilidadNeta(festivalId, unidadVentaId);
+
+        mav.addObject("rentabilidad", rentabilidad);
+        mav.addObject("festivalId", festivalId);
+        mav.addObject("unidadVentaId", unidadVentaId);
+
+        return mav;
     }
 }

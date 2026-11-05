@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,4 +36,10 @@ public interface IPedidoRepository extends JpaRepository<Pedido, Serializable> {
             "INNER JOIN FETCH d.plato pl " +
             "WHERE uv = :unidadVenta")
     List<Pedido> generarReportePorUnidadVenta(@Param("unidadVenta") UnidadVenta unidadVenta);
+
+    @Query("SELECT DISTINCT p FROM Pedido p " +
+            "LEFT JOIN FETCH p.detalles d " +
+            "LEFT JOIN FETCH d.plato " +
+            "WHERE p.unidadVenta = :unidadVenta AND p.fechaPedido BETWEEN :inicio AND :fin")
+    List<Pedido> findPedidosParaRentabilidad(@Param("unidadVenta") UnidadVenta unidadVenta, @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
 }
