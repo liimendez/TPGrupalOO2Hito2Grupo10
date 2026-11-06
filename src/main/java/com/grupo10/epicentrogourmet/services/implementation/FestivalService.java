@@ -9,6 +9,7 @@ import java.util.Optional;
 import com.grupo10.epicentrogourmet.dtos.PlatoDTO;
 import com.grupo10.epicentrogourmet.dtos.ReporteMayoresCanonDTO;
 import com.grupo10.epicentrogourmet.entities.*;
+import com.grupo10.epicentrogourmet.services.ICostosService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,7 @@ public class FestivalService implements IFestivalService {
     @Autowired private ILiquidacionDeHaberRepository liquidacionRepository;
     @Autowired private IUnidadVentaRepository unidadVentaRepository;
     @Autowired private IUnidadVentaService unidadVentaService;
+    @Autowired private ICostosService costosService;
 
     @Override public List<Festival> getAll() { return festivalRepository.findAll(); }
     @Override public Optional<Festival> findById(Long id) { return festivalRepository.findById(id); }
@@ -69,30 +71,76 @@ public class FestivalService implements IFestivalService {
         return new ReporteVentaDTO(festival.getId(), festival.getNombre(), total, pedidos.size());
     }
 
-    // PUNTO 6 y 7 - Rentabilidad
+    // PUNTO 6 - Cálculo de Rentabilidad Neta
     @Override
     public RentabilidadNetaDTO getRentabilidadNeta(Long festivalId, Long unidadVentaId) {
-        UnidadVenta unidad = unidadVentaRepository.findById(unidadVentaId).orElseThrow(() -> new RuntimeException("Unidad no encontrada"));
-        List<Pedido> pedidos = pedidoRepository.findByFestivalIdAndUnidadVentaId(festivalId, unidadVentaId);
-        double gananciaBruta = pedidos.stream().mapToDouble(p -> p.getDetalles() == null ? 0 : p.getDetalles().stream().mapToDouble(d -> d.getCantidad() * (d.getPlato().getPrecioVenta() - d.getPlato().getCostoProduccion())).sum()).sum();
-        double totalSueldos = liquidacionRepository.findByFestivalIdAndUnidadVentaId(festivalId, unidadVentaId).stream().mapToDouble(LiquidacionDeHaber::getTotalACobrar).sum();
-        double canon = unidadVentaService.calcularCanon(unidadVentaId);
-        return new RentabilidadNetaDTO(festivalId, unidadVentaId, gananciaBruta, totalSueldos, canon, gananciaBruta - totalSueldos - canon);
+
+        Festival festival = festivalRepository.findById(festivalId).orElseThrow(() -> new RuntimeException("No se encontro el Festival"));
+
+        UnidadVenta unidad = unidadVentaRepository.findById(unidadVentaId).orElseThrow(() -> new RuntimeException("No se encontro la UnidadVenta"));
+
+        List<Pedido> pedidos = pedidoRepository.findPedidosParaRentabilidad(unidad, festival.getFechaInicio(), festival.getFechaFin());
+
+        double gananciaBruta = pedidos.stream()
+                .mapToDouble(p -> p.getDetalles() == null ? 0 : p.getDetalles().stream()
+                        .mapToDouble(d -> d.getCantidad() * (d.getPlato().getPrecioVenta() - d.getPlato().getCostoProduccion()))
+                        .sum())
+                .sum();
+
+        List<LiquidacionDeHaber> liquidaciones = liquidacionRepository.findLiquidacionesParaRentabilidad(unidad, festival.getFechaInicio(), festival.getFechaFin());
+
+        double totalSueldos = liquidaciones.stream()
+                .mapToDouble(LiquidacionDeHaber::getTotalACobrar)
+                .sum();
+
+        double canon = costosService.calcularCanon(unidadVentaId).getTotalCanon().doubleValue();
+
+        double rentabilidadNeta = gananciaBruta - totalSueldos - canon;
+
+        return new RentabilidadNetaDTO(festivalId, unidadVentaId, gananciaBruta, totalSueldos, canon, rentabilidadNeta);
     }
 
+    // PUNTO 7 - Cálculo de Rentabilidad Neta entre dos fechas
     @Override
     public RentabilidadNetaDTO getRentabilidadNetaEntreFechas(Long festivalId, Long unidadVentaId, LocalDate desde, LocalDate hasta) {
-        List<Pedido> pedidos = pedidoRepository.findByFestivalIdAndUnidadVentaId(festivalId, unidadVentaId).stream().filter(p -> p.getFechaPedido() != null && !p.getFechaPedido().isBefore(desde) && !p.getFechaPedido().isAfter(hasta)).toList();
-        double gananciaBruta = pedidos.stream().mapToDouble(p -> p.getDetalles() == null ? 0 : p.getDetalles().stream().mapToDouble(d -> d.getCantidad() * (d.getPlato().getPrecioVenta() - d.getPlato().getCostoProduccion())).sum()).sum();
-        double totalSueldos = liquidacionRepository.findByFestivalIdAndUnidadVentaId(festivalId, unidadVentaId).stream().mapToDouble(LiquidacionDeHaber::getTotalACobrar).sum();
-        double canon = unidadVentaService.calcularCanon(unidadVentaId);
-        return new RentabilidadNetaDTO(festivalId, unidadVentaId, gananciaBruta, totalSueldos, canon, gananciaBruta - totalSueldos - canon);
+
+        Festival festival = festivalRepository.findById(festivalId)
+                .orElseThrow(() -> new RuntimeException("No se encontro el Festival"));
+
+        if (desde.isBefore(festival.getFechaInicio()) || hasta.isAfter(festival.getFechaFin()) || desde.isAfter(hasta)) {
+            throw new IllegalArgumentException("El rango de fechas debe estar indicado entre el Inicio y el Fin del Festival.");
+        }
+
+        UnidadVenta unidad = unidadVentaRepository.findById(unidadVentaId)
+                .orElseThrow(() -> new RuntimeException("No se encontro la UnidadVenta"));
+
+        List<Pedido> pedidos = pedidoRepository.findPedidosParaRentabilidad(unidad, desde, hasta);
+
+        double gananciaBruta = pedidos.stream()
+                .mapToDouble(p -> p.getDetalles() == null ? 0 : p.getDetalles().stream()
+                        .mapToDouble(d -> d.getCantidad() * (d.getPlato().getPrecioVenta() - d.getPlato().getCostoProduccion()))
+                        .sum())
+                .sum();
+
+        List<LiquidacionDeHaber> liquidaciones = liquidacionRepository.findLiquidacionesParaRentabilidad(unidad, desde, hasta);
+
+        double totalSueldos = liquidaciones.stream()
+                .mapToDouble(LiquidacionDeHaber::getTotalACobrar)
+                .sum();
+
+        double canon = costosService.calcularCanon(unidadVentaId).getTotalCanon().doubleValue();
+
+        double rentabilidadNeta = gananciaBruta - totalSueldos - canon;
+
+        return new RentabilidadNetaDTO(festivalId, unidadVentaId, gananciaBruta, totalSueldos, canon, rentabilidadNeta);
     }
 
     // PUNTO 8 - Plato Estrella
     @Override
     public PlatoDTO getPlatoEstrella(Long festivalId, Long unidadVentaId) {
-        List<Pedido> pedidos = pedidoRepository.findByFestivalIdAndUnidadVentaId(festivalId, unidadVentaId);
+
+        List<Pedido> pedidos = pedidoRepository.findPedidosPlatoEstrellaPorFestival(festivalId, unidadVentaId);
+
         if (pedidos.isEmpty()) throw new RuntimeException("No hay pedidos para esa unidad en ese festival");
         Map<Long, Long> cantidadPorPlato = new HashMap<>();
         Map<Long, Plato> platoPorId = new HashMap<>();
@@ -106,7 +154,7 @@ public class FestivalService implements IFestivalService {
         }
         Long idGanador = cantidadPorPlato.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElseThrow(() -> new RuntimeException("No hay platos vendidos"));
         Plato platoEstrella = platoPorId.get(idGanador);
-        return PlatoDTO.builder().id(platoEstrella.getId()).nombre(platoEstrella.getNombre()).precioVenta(platoEstrella.getPrecioVenta()).costoProduccion(platoEstrella.getCostoProduccion()).unidadVentaId(platoEstrella.getUnidadVenta() != null ? platoEstrella.getUnidadVenta().getId() : null).nombreComercialUnidad(platoEstrella.getUnidadVenta() != null ? platoEstrella.getUnidadVenta().getNombreComercial() : null).build();
+        return PlatoDTO.builder().id(platoEstrella.getId()).nombre(platoEstrella.getNombre()).precioVenta(platoEstrella.getPrecioVenta()).costoProduccion(platoEstrella.getCostoProduccion()).unidadVentaId(platoEstrella.getUnidadVenta() != null ? platoEstrella.getUnidadVenta().getId() : null).nombreComercialUnidad(platoEstrella.getUnidadVenta() != null ? platoEstrella.getUnidadVenta().getNombreComercial() : null).cantidadVendida(cantidadPorPlato.get(idGanador)).build();
     }
 
     // PUNTO 3 - Ranking por Recaudación (ADMIN)

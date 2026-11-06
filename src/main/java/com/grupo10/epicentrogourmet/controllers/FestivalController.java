@@ -1,5 +1,7 @@
 package com.grupo10.epicentrogourmet.controllers;
 
+import com.grupo10.epicentrogourmet.dtos.PlatoDTO;
+import com.grupo10.epicentrogourmet.dtos.RentabilidadNetaDTO;
 import com.grupo10.epicentrogourmet.dtos.RequestFestivalDTO;
 import com.grupo10.epicentrogourmet.entities.Festival;
 import com.grupo10.epicentrogourmet.entities.Pedido;
@@ -17,6 +19,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -194,5 +197,76 @@ public class FestivalController {
         model.addAttribute("festival", festival);
         model.addAttribute("ranking", ranking);
         return "festival/ranking";
+    }
+
+    @GetMapping("/rentabilidad")
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public ModelAndView verRentabilidadNeta(@RequestParam Long festivalId, @RequestParam Long unidadVentaId) {
+
+        ModelAndView mav = new ModelAndView("responsable/rentabilidad-neta");
+
+        Festival festival = festivalService.findById(festivalId)
+                .orElseThrow(() -> new RuntimeException("Festival no encontrado"));
+        RentabilidadNetaDTO rentabilidad = festivalService.getRentabilidadNeta(festivalId, unidadVentaId);
+
+        mav.addObject("rentabilidad", rentabilidad);
+        mav.addObject("festivalId", festivalId);
+        mav.addObject("unidadVentaId", unidadVentaId);
+        mav.addObject("festival", festival);
+        mav.addObject("desde", festival.getFechaInicio());
+        mav.addObject("hasta", festival.getFechaFin());
+
+        return mav;
+    }
+
+    @GetMapping("/rentabilidad/fechas")
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public ModelAndView verRentabilidadNetaEntreFechas(
+            @RequestParam Long festivalId, @RequestParam Long unidadVentaId,
+            @RequestParam LocalDate desde, @RequestParam LocalDate hasta) {
+
+        ModelAndView mav = new ModelAndView("responsable/rentabilidad-neta");
+
+        Festival festival = festivalService.findById(festivalId)
+                .orElseThrow(() -> new RuntimeException("Festival no encontrado"));
+
+        mav.addObject("festivalId", festivalId);
+        mav.addObject("unidadVentaId", unidadVentaId);
+        mav.addObject("festival", festival);
+        mav.addObject("desde", desde);
+        mav.addObject("hasta", hasta);
+
+        try {
+            RentabilidadNetaDTO rentabilidad = festivalService.getRentabilidadNetaEntreFechas(festivalId, unidadVentaId, desde, hasta);
+            mav.addObject("rentabilidad", rentabilidad);
+        } catch (IllegalArgumentException e) {
+            mav.addObject("error", e.getMessage());
+            RentabilidadNetaDTO rentabilidadDefault = festivalService.getRentabilidadNeta(festivalId, unidadVentaId);
+            mav.addObject("rentabilidad", rentabilidadDefault);
+        }
+
+        return mav;
+    }
+
+    @GetMapping("/plato-estrella")
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public ModelAndView verPlatoEstrella(@RequestParam Long festivalId, @RequestParam Long unidadVentaId) {
+        ModelAndView mav = new ModelAndView("responsable/plato-estrella");
+
+        Festival festival = festivalService.findById(festivalId)
+                .orElseThrow(() -> new RuntimeException("Festival no encontrado"));
+        UnidadVenta unidad = unidadVentaService.findById(unidadVentaId)
+                .orElseThrow(() -> new RuntimeException("Unidad de venta no encontrada"));
+
+        try {
+            PlatoDTO platoEstrella = festivalService.getPlatoEstrella(festivalId, unidadVentaId);
+            mav.addObject("platoEstrella", platoEstrella);
+        } catch (RuntimeException e) {
+            mav.addObject("error", e.getMessage());
+        }
+
+        mav.addObject("festival", festival);
+        mav.addObject("unidad", unidad);
+        return mav;
     }
 }
