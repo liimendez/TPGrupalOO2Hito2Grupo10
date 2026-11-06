@@ -1,5 +1,6 @@
 package com.grupo10.epicentrogourmet.controllers;
 
+import com.grupo10.epicentrogourmet.dtos.PlatoDTO;
 import com.grupo10.epicentrogourmet.dtos.RentabilidadNetaDTO;
 import com.grupo10.epicentrogourmet.dtos.RequestFestivalDTO;
 import com.grupo10.epicentrogourmet.entities.Festival;
@@ -244,6 +245,28 @@ public class FestivalController {
             mav.addObject("rentabilidad", rentabilidadDefault);
         }
 
+        return mav;
+    }
+
+    @GetMapping("/plato-estrella")
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public ModelAndView verPlatoEstrella(@RequestParam Long festivalId, @RequestParam Long unidadVentaId) {
+        ModelAndView mav = new ModelAndView("responsable/plato-estrella");
+
+        Festival festival = festivalService.findById(festivalId)
+                .orElseThrow(() -> new RuntimeException("Festival no encontrado"));
+        UnidadVenta unidad = unidadVentaService.findById(unidadVentaId)
+                .orElseThrow(() -> new RuntimeException("Unidad de venta no encontrada"));
+
+        try {
+            PlatoDTO platoEstrella = festivalService.getPlatoEstrella(festivalId, unidadVentaId);
+            mav.addObject("platoEstrella", platoEstrella);
+        } catch (RuntimeException e) {
+            mav.addObject("error", e.getMessage());
+        }
+
+        mav.addObject("festival", festival);
+        mav.addObject("unidad", unidad);
         return mav;
     }
 }

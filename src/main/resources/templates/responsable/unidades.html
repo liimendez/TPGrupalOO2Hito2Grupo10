@@ -65,6 +65,23 @@
                                 </li>
                             </ul>
                         </div>
+
+                        <div class="dropdown d-inline-block">
+                            <button class="btn btn-warning btn-sm dropdown-toggle fw-bold" type="button" data-bs-toggle="dropdown">
+                                ⭐ Plato Estrella
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-dark">
+                                <li><h6 class="dropdown-header text-warning small">Seleccionar Festival</h6></li>
+                                <li th:each="f : ${u.festivales}">
+                                    <a class="dropdown-item fw-bold"
+                                       th:href="@{/festival/plato-estrella(festivalId=${f.id}, unidadVentaId=${u.id})}"
+                                       th:text="${f.nombre}">
+                                        Nombre del Festival
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+
                     </td>
                 </tr>
                 </tbody>

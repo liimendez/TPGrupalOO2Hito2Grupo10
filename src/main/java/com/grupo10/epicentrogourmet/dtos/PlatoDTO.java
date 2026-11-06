@@ -10,4 +10,5 @@ public class PlatoDTO {
     private double costoProduccion;
     private Long unidadVentaId;
     private String nombreComercialUnidad;
+    private Long cantidadVendida;
 }

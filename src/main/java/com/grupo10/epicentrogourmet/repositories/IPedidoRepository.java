@@ -42,4 +42,13 @@ public interface IPedidoRepository extends JpaRepository<Pedido, Serializable> {
             "LEFT JOIN FETCH d.plato " +
             "WHERE p.unidadVenta = :unidadVenta AND p.fechaPedido BETWEEN :inicio AND :fin")
     List<Pedido> findPedidosParaRentabilidad(@Param("unidadVenta") UnidadVenta unidadVenta, @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+
+    @Query("SELECT DISTINCT p FROM Pedido p " +
+            "JOIN p.unidadVenta uv " +
+            "JOIN uv.festivales f " +
+            "LEFT JOIN FETCH p.detalles d " +
+            "LEFT JOIN FETCH d.plato " +
+            "WHERE f.id = :festivalId AND uv.id = :unidadVentaId " +
+            "AND p.fechaPedido BETWEEN f.fechaInicio AND f.fechaFin")
+    List<Pedido> findPedidosPlatoEstrellaPorFestival(@Param("festivalId") Long festivalId, @Param("unidadVentaId") Long unidadVentaId);
 }
