@@ -34,11 +34,12 @@ public class SecurityConfiguration {
                 .cors(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/", "/index","/login", "/loginprocess", "/loginsuccess",
-                            "/css/**", "/js/**", "/imgs/**",
+                            "/css/**", "/js/**", "/img/**", "/imgs/**",
+                            "/images/**", "/static/**",
                             "/vendor/**", "/api/v1/**", "/error/**",
                             "/unidad-venta/new", "/unidad-venta/save").permitAll();
 
-                    auth.requestMatchers("/festival/new", "/festival/editar/**", "/festival/eliminar/**",
+                    auth.requestMatchers("/admin/**", "/festival/new", "/festival/editar/**", "/festival/eliminar/**",
                             "/festival/save", "/usuarios/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN");
 
                     auth.requestMatchers("/empleado/mi-informacion", "/empleado/mi-informacion/**").authenticated();
@@ -61,7 +62,19 @@ public class SecurityConfiguration {
                     login.loginProcessingUrl("/loginprocess");
                     login.usernameParameter("username");
                     login.passwordParameter("password");
-                    login.defaultSuccessUrl("/loginsuccess", true);
+                    // REDIRECCIÓN POR ROL
+                    login.successHandler((request, response, authentication) -> {
+                        var authorities = authentication.getAuthorities();
+                        String redirectUrl = "/index";
+                        for (var auth : authorities) {
+                            String role = auth.getAuthority();
+                            if (role.equals("ROLE_ADMIN") || role.equals("ADMIN")) {
+                                redirectUrl = "/admin/dashboard";
+                                break;
+                            }
+                        }
+                        response.sendRedirect(redirectUrl);
+                    });
                     login.permitAll();
                 })
                 .logout(logout -> {

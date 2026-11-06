@@ -7,12 +7,21 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 @Repository("festivalRepository")
 public interface IFestivalRepository extends JpaRepository<Festival, Serializable> {
     public abstract Optional<Festival> findById(Long id);
+
     @Query("SELECT f FROM Festival f LEFT JOIN FETCH f.unidadesVenta WHERE f.id = :id")
     Optional<Festival> findByIdWithUnidades(@Param("id") Long id);
+
+    // Para dashboard - contar solo activos por fecha real
+    long countByFechaInicioLessThanEqualAndFechaFinGreaterThanEqual(LocalDate inicio, LocalDate fin);
+
+    // Para dashboard - próximos: solo los que no terminaron aún
+    List<Festival> findByFechaFinGreaterThanEqualOrderByFechaInicioAsc(LocalDate fecha);
+    List<Festival> findAllByOrderByFechaInicioAsc();
 }

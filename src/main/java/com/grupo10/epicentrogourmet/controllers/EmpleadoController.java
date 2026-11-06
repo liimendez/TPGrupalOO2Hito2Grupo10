@@ -5,6 +5,7 @@ import com.grupo10.epicentrogourmet.dtos.RequestPersonalDTO;
 import com.grupo10.epicentrogourmet.entities.*;
 import com.grupo10.epicentrogourmet.helpers.ViewRouteHelper;
 import com.grupo10.epicentrogourmet.repositories.ICategoriaCocinaRepository;
+import com.grupo10.epicentrogourmet.repositories.ICostosRepository;
 import com.grupo10.epicentrogourmet.repositories.ILiquidacionDeHaberRepository;
 import com.grupo10.epicentrogourmet.repositories.IPersonalRepository;
 import com.grupo10.epicentrogourmet.repositories.IUnidadVentaRepository;
@@ -47,6 +48,7 @@ public class EmpleadoController {
     @Autowired private ILiquidacionDeHaberRepository liquidacionRepository;
     @Autowired private ILiquidacionDeHaberService liquidacionDeHaberService;
     @Autowired private ICategoriaCocinaRepository categoriaCocinaRepository;
+    @Autowired private ICostosRepository costosRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -112,16 +114,13 @@ public class EmpleadoController {
     @PostMapping("/agregar")
     @PreAuthorize("hasAnyRole('ADMIN', 'RESPONSABLE')")
     public String agregar(@ModelAttribute("nuevoEmpleado") RequestPersonalDTO req, Model model, RedirectAttributes redirectAttributes) {
-
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         boolean esEmpleado = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("EMPLEADO") || a.getAuthority().equals("ROLE_EMPLEADO"));
-
         if (esEmpleado) {
             redirectAttributes.addFlashAttribute("error", "Acceso denegado: Solo el Responsable puede dar de alta empleados.");
             return "redirect:/empleado/lista";
         }
-
         UnidadVenta uv = getUnidadDelLogueado();
         try {
             PersonalDTO dto = new PersonalDTO();
@@ -132,7 +131,7 @@ public class EmpleadoController {
             dto.setFechaNacimiento(req.getFechaNacimiento());
             dto.setFechaIngreso(req.getFechaIngreso());
             dto.setTurno(req.getTurno());
-            dto.setCategoria(req.getCategoria()); // EJECUTIVO / AYUDANTE / LAVAPLATOS
+            dto.setCategoria(req.getCategoria());
             personalService.altaConUsuario(req.getTipoPersonal(), dto, uv.getId());
             return "redirect:" + ViewRouteHelper.EMPLEADO_ROUTE;
         } catch (IllegalArgumentException e) {
@@ -149,16 +148,13 @@ public class EmpleadoController {
     @PreAuthorize("hasAnyRole('ADMIN', 'RESPONSABLE')")
     @Transactional
     public String eliminar(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         boolean esEmpleado = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("EMPLEADO") || a.getAuthority().equals("ROLE_EMPLEADO"));
-
         if (esEmpleado) {
             redirectAttributes.addFlashAttribute("error", "Acceso denegado: Solo el responsable puede dar de baja empleados.");
             return "redirect:/empleado/lista";
         }
-
         var p = personalRepository.findByIdIncludingInactive(id).orElseThrow();
         validarQueEsDeMiUnidad(p);
         personalService.remove(id);
@@ -200,7 +196,6 @@ public class EmpleadoController {
     @PreAuthorize("hasAnyRole('ADMIN', 'RESPONSABLE')")
     @Transactional
     public String guardarEdicion(@PathVariable Long id, @ModelAttribute("nuevoEmpleado") RequestPersonalDTO req, RedirectAttributes redirectAttributes) {
-
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         boolean esEmpleado = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("EMPLEADO") || a.getAuthority().equals("ROLE_EMPLEADO"));
@@ -208,13 +203,10 @@ public class EmpleadoController {
             redirectAttributes.addFlashAttribute("error", "Acceso denegado: Solo el responsable puede guardar empleados.");
             return "redirect:/empleado/lista";
         }
-
         var p = personalRepository.findByIdIncludingInactive(id).orElseThrow();
         validarQueEsDeMiUnidad(p);
-
         String tipoNuevo = req.getTipoPersonal();
         String tipoViejo = p instanceof Cajero ? "CAJERO" : "COCINERO";
-
         if (!tipoViejo.equals(tipoNuevo)) {
             if (p instanceof Cocinero) {
                 entityManager.createNativeQuery("DELETE FROM cocinero WHERE id = :id").setParameter("id", id).executeUpdate();
@@ -224,7 +216,7 @@ public class EmpleadoController {
             if("CAJERO".equals(tipoNuevo)) {
                 entityManager.createNativeQuery("INSERT INTO cajero (id, turno) VALUES (:id, 'MANIANA')").setParameter("id", id).executeUpdate();
             } else {
-                Long catId = 1L; // COCINERO por defecto
+                Long catId = 1L;
                 if(req.getCategoria() != null && !req.getCategoria().isBlank()){
                     String catReq = req.getCategoria().toUpperCase();
                     String nombreBuscar = "LAVAPLATOS";
@@ -233,7 +225,7 @@ public class EmpleadoController {
                     var cat = categoriaCocinaRepository.findByNombreIgnoreCase(nombreBuscar).orElse(null);
                     if(cat != null) catId = cat.getId();
                 } else if(p instanceof Cocinero cocOld && cocOld.getCategoriaCocina() != null) {
-                    catId = cocOld.getCategoriaCocina().getId(); // mantiene la vieja si no viene nada
+                    catId = cocOld.getCategoriaCocina().getId();
                 }
                 entityManager.createNativeQuery("INSERT INTO cocinero (id, categoria_id) VALUES (:id, :catId)")
                         .setParameter("id", id).setParameter("catId", catId).executeUpdate();
@@ -249,7 +241,6 @@ public class EmpleadoController {
                 personalRepository.save(p);
             }
         }
-
         p.setNombre(req.getNombre()); p.setApellido(req.getApellido()); p.setDni(req.getDni());
         p.setFechaNacimiento(req.getFechaNacimiento()); p.setFechaIngreso(req.getFechaIngreso());
         personalRepository.save(p);
@@ -266,16 +257,20 @@ public class EmpleadoController {
         validarQueEsDeMiUnidad(p);
         var uv = p.getUnidadAsignada();
         if(uv == null) throw new RuntimeException("Empleado " + id + " sin unidad");
-        var hoy = LocalDate.now();
         if(liquidacionRepository.existsByPersonal_IdAndFechaLiquidacion(id, LocalDate.now())) {
             return "redirect:/empleado/liquidaciones/" + id;
         }
         var liq = liquidacionDeHaberService.liquidar(p.getId(), uv.getId());
+        var costos = costosRepository.findAll().stream().findFirst().orElse(null);
+        int tramos = (liq.getDiasDeTrabajo() / 15) + 1;
+
         model.addAttribute("personal", p);
         model.addAttribute("unidad", uv);
         model.addAttribute("sueldo", BigDecimal.valueOf(liq.getTotalACobrar()));
         model.addAttribute("anios", personalService.getAntiguedadAnios(id));
         model.addAttribute("liquidacion", liq);
+        model.addAttribute("costos", costos);
+        model.addAttribute("tramos", tramos);
         return ViewRouteHelper.EMPLEADO_LIQUIDACION;
     }
 
@@ -294,11 +289,16 @@ public class EmpleadoController {
         if(liq.getPersonal() == null) throw new RuntimeException("Liquidación vieja corrupta, borrar id " + liquidacionId);
         var p = liq.getPersonal();
         validarQueEsDeMiUnidad(p);
+        var costos = costosRepository.findAll().stream().findFirst().orElse(null);
+        int tramos = (liq.getDiasDeTrabajo() / 15) + 1;
+
         model.addAttribute("personal", p);
         model.addAttribute("unidad", liq.getUnidadVenta());
         model.addAttribute("sueldo", BigDecimal.valueOf(liq.getTotalACobrar()));
         model.addAttribute("anios", personalService.getAntiguedadAnios(p.getId()));
         model.addAttribute("liquidacion", liq);
+        model.addAttribute("costos", costos);
+        model.addAttribute("tramos", tramos);
         return ViewRouteHelper.EMPLEADO_LIQUIDACION;
     }
 
@@ -311,13 +311,23 @@ public class EmpleadoController {
                 .orElseThrow(() -> new RuntimeException("No se encontró el Usuario del empleado para el correo: " + email));
         UnidadVenta unidadActual = empleado.getUnidadAsignada();
         var liquidaciones = liquidacionRepository.findByPersonalIdOrderByFechaLiquidacionDesc(empleado.getId());
+        LocalDate hoy = LocalDate.now();
+        Set<Festival> todosFestivales = unidadActual != null ? unidadActual.getFestivales() : Set.of();
+        Set<Festival> festivalesActuales = todosFestivales.stream()
+                .filter(f -> f.getFechaInicio() != null && f.getFechaFin() != null)
+                .filter(f -> !hoy.isBefore(f.getFechaInicio()) && !hoy.isAfter(f.getFechaFin()))
+                .collect(Collectors.toSet());
+        Set<Festival> festivalesPasadosDeUnidad = todosFestivales.stream()
+                .filter(f -> f.getFechaFin() != null && f.getFechaFin().isBefore(hoy))
+                .collect(Collectors.toSet());
         Set<UnidadVenta> unidadesHistoricas = liquidaciones.stream()
                 .map(LiquidacionDeHaber::getUnidadVenta)
-                .filter(uv -> uv != null)
+                .filter(uv -> uv != null && (unidadActual == null || !uv.getId().equals(unidadActual.getId())))
                 .collect(Collectors.toSet());
         mAV.addObject("empleado", empleado);
         mAV.addObject("unidadActual", unidadActual);
-        mAV.addObject("festivalesActuales", unidadActual != null ? unidadActual.getFestivales() : null);
+        mAV.addObject("festivalesActuales", festivalesActuales);
+        mAV.addObject("festivalesPasadosDeUnidad", festivalesPasadosDeUnidad);
         mAV.addObject("unidadesHistoricas", unidadesHistoricas);
         mAV.addObject("liquidaciones", liquidaciones);
         return mAV;
@@ -330,20 +340,15 @@ public class EmpleadoController {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Personal empleado = personalRepository.findByCredencialesCorreo(email)
                 .orElseThrow(() -> new RuntimeException("Empleado no encontrado"));
-
         LiquidacionDeHaber liq = liquidacionRepository.findById(liquidacionId)
                 .orElseThrow(() -> new RuntimeException("Liquidación no encontrada"));
-
         if (!liq.getPersonal().getId().equals(empleado.getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No podés descargar recibos de otros empleados");
         }
-
         byte[] pdf = liquidacionDeHaberService.generarReciboSueldoPdf(liquidacionId);
-
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
         headers.setContentDispositionFormData("attachment", "Recibo_Sueldo_" + liquidacionId + ".pdf");
-
         return new ResponseEntity<>(pdf, headers, HttpStatus.OK);
     }
 }

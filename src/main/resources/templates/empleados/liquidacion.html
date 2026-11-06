@@ -23,66 +23,82 @@
             </div>
             <div class="text-end">
                 <h6 class="mb-0">LIQUIDACIÓN DE HABERES</h6>
-                <small th:text="'Nº: ' + ${liquidacion.id}">Nº: 9</small><br>
-                <small th:text="${liquidacion.fechaLiquidacion}">2026-10-25</small>
+                <small th:text="'Nº: ' + ${liquidacion.id}">Nº: 4</small><br>
+                <small th:text="${liquidacion.fechaLiquidacion}">2026-11-05</small>
             </div>
         </div>
 
-        <!-- DATOS EMPLEADO - ARREGLADO PARA NUEVO MODELO CategoriaCocina -->
         <div class="p-3 border-bottom">
             <div class="row small">
                 <div class="col-6">
-                    <strong>Empleado:</strong> <span th:text="${personal.nombre + ' ' + personal.apellido}">jessica peralta</span><br>
-                    <strong>DNI:</strong> <span th:text="${personal.dni}">00.000.000</span><br>
-
+                    <strong>Empleado:</strong> <span th:text="${personal.nombre + ' ' + personal.apellido}">yolanda gomez</span><br>
+                    <strong>DNI:</strong> <span th:text="${personal.dni}">46888999</span><br>
                     <span th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cocinero)}">
-                        <strong>Categoría:</strong>
-                        <span th:text="${personal.categoriaCocina.nombre}">AYUDANTE</span>
-                        - Plus $ <span th:text="${#numbers.formatDecimal(personal.categoriaCocina.plusFijo, 1, 0)}">100000</span>
+                        <strong>Categoría:</strong> <span th:text="${personal.categoriaCocina.nombre}">CHEF EJECUTIVO</span>
+                        - Plus $ <span th:text="${#numbers.formatDecimal(personal.categoriaCocina.plusFijo, 1, 0)}">150000</span>
                     </span>
                     <span th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cajero)}">
                         <strong>Categoría:</strong> <span th:text="'CAJERO - Turno ' + ${personal.turno}">CAJERO</span>
                     </span>
-                    <span th:if="${personal.class.simpleName == 'Personal'}">
-                        <strong>Tipo:</strong> <span th:text="${personal.class.simpleName}"></span>
-                    </span>
                 </div>
                 <div class="col-6">
-                    <strong>Fecha Ingreso:</strong> <span th:text="${personal.fechaIngreso}">2024-01-01</span><br>
-                    <strong>Antigüedad:</strong> <span th:text="${anios} + ' años'">2 años</span><br>
-                    <strong>Días Trabajados:</strong> <span th:text="${liquidacion.diasDeTrabajo}">2</span>
+                    <strong>Fecha Ingreso:</strong> <span th:text="${personal.fechaIngreso}">2026-08-12</span><br>
+                    <strong>Antigüedad:</strong> <span th:text="${anios} + ' años'">0 años</span><br>
+                    <strong>Días Trabajados:</strong> <span th:text="${liquidacion.diasDeTrabajo}">60</span>
                 </div>
             </div>
         </div>
 
         <table class="table concepto-table table-bordered m-0">
             <thead>
-            <tr><th>Cod</th><th>Concepto</th><th class="text-end">Cant.</th><th class="text-end">Remunerativo</th><th class="text-end">Deducción</th></tr>
+            <tr><th>COD</th><th>CONCEPTO</th><th class="text-end">CANT.</th><th class="text-end">REMUNERATIVO</th><th class="text-end">DEDUCCIÓN</th></tr>
             </thead>
             <tbody class="small">
-            <tr><td>1000</td><td>Sueldo Básico Convenio</td><td class="text-end">30</td><td class="text-end">100.000,00</td><td class="text-end">-</td></tr>
-            <tr><td>1001</td><td>Antigüedad (<span th:text="${anios}">2</span> años x $5.000)</td><td class="text-end" th:text="${anios}">2</td><td class="text-end" th:text="${anios * 5000 + ',00'}">10.000,00</td><td class="text-end">-</td></tr>
+            <tr>
+                <td>1000</td><td>Sueldo Básico Convenio</td>
+                <td class="text-end" th:text="${liquidacion.diasDeTrabajo}">60</td>
+                <td class="text-end" th:text="${costos != null ? #numbers.formatDecimal(costos.sueldoBase, 1, 2) : '100.000,00'}">100.000,00</td>
+                <td class="text-end">-</td>
+            </tr>
+            <tr>
+                <td>1001</td><td>Antigüedad (<span th:text="${anios}">0</span> años x $5.000)</td>
+                <td class="text-end" th:text="${anios}">0</td>
+                <td class="text-end" th:text="${#numbers.formatDecimal(anios * 5000, 1, 2)}">0,00</td>
+                <td class="text-end">-</td>
+            </tr>
             <tr>
                 <td>1002</td>
-                <td>Plus por Categoría
-                    <span th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cocinero)}" th:text="'- ' + ${personal.categoriaCocina.nombre}"></span>
-                </td>
+                <td>Plus por Categoría <span th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cocinero)}" th:text="'- ' + ${personal.categoriaCocina.nombre}"></span></td>
                 <td class="text-end">1</td>
                 <td class="text-end">
-                    <span th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cocinero)}" th:text="${#numbers.formatDecimal(personal.categoriaCocina.plusFijo, 1, 2)}">100.000,00</span>
+                    <span th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cocinero)}" th:text="${#numbers.formatDecimal(personal.categoriaCocina.plusFijo, 1, 2)}">150.000,00</span>
                     <span th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cajero)}">0,00</span>
                 </td>
                 <td class="text-end">-</td>
             </tr>
-            <tr><td>1003</td><td>Factor Festival (50% - según PDF punto 4)</td><td class="text-end">0,5</td><td class="text-end">-</td><td class="text-end">-</td></tr>
-            <tr class="fw-bold table-light"><td colspan="3" class="text-end">TOTAL BRUTO</td><td class="text-end" th:text="'$ ' + ${#numbers.formatDecimal(sueldo, 1, 2)}">$ 130.000,00</td><td></td></tr>
+            <tr><td>1003</td><td>Factor Festival (50% - PDF punto 4)</td><td class="text-end">0,5</td><td class="text-end">-</td><td class="text-end">-</td></tr>
+            <tr style="background:#fff3cd">
+                <td>1004</td>
+                <td>Tramos Festival = int(<span th:text="${liquidacion.diasDeTrabajo}">60</span>/15)+1</td>
+                <td class="text-end" th:text="${tramos}">5</td>
+                <td class="text-end">-</td>
+                <td class="text-end">-</td>
+            </tr>
+            <tr class="fw-bold table-warning">
+                <td colspan="3" class="text-end">
+                    Cálculo: (<span th:text="${costos != null ? #numbers.formatDecimal(costos.sueldoBase,1,0) : '100.000'}">100.000</span> + <span th:text="${anios * 5000}">0</span> + Plus) * 0,5 * <span th:text="${tramos}">5</span>
+                </td>
+                <td class="text-end" th:text="'$ ' + ${#numbers.formatDecimal(sueldo, 1, 2)}">$ 250.000,00</td>
+                <td></td>
+            </tr>
+            <tr class="fw-bold table-light"><td colspan="3" class="text-end">TOTAL BRUTO / NETO A COBRAR</td><td class="text-end" th:text="'$ ' + ${#numbers.formatDecimal(sueldo, 1, 2)}">$ 250.000,00</td><td></td></tr>
             </tbody>
         </table>
 
         <div class="p-3">
             <div class="row">
-                <div class="col-8"><div class="border p-2 small"><strong>Observaciones:</strong> Liquidación generada según fórmula oficial: (Sueldo Base + Plus + Antigüedad) * 50% * Tramos. Categorías: CHEF EJECUTIVO 150k / AYUDANTE 100k / LAVAPLATOS 50k.</div></div>
-                <div class="col-4"><div class="bg-dark text-white p-3 text-center"><small class="d-block">NETO A COBRAR</small><h3 class="mb-0" th:text="'$ ' + ${#numbers.formatDecimal(sueldo, 1, 2)}">$ 130.000,00</h3></div></div>
+                <div class="col-8"><div class="border p-2 small"><strong>Observaciones:</strong> Liquidación generada según fórmula oficial: (Sueldo Base + Plus + Antigüedad) * 50% * Tramos. Tramos = int(dias/15)+1 según PDF punto 4.</div></div>
+                <div class="col-4"><div class="bg-dark text-white p-3 text-center"><small class="d-block">NETO A COBRAR</small><h3 class="mb-0" th:text="'$ ' + ${#numbers.formatDecimal(sueldo, 1, 2)}">$ 250.000,00</h3></div></div>
             </div>
         </div>
         <div class="linea-corte my-2"></div>
