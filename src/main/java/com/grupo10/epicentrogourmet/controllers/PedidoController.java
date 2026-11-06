@@ -137,12 +137,52 @@ public class PedidoController {
 
     @PreAuthorize("hasAnyAuthority('RESPONSABLE','ROLE_RESPONSABLE')")
     @GetMapping("/reporte/unidad/{unidadVentaId}")
+    @Transactional(readOnly = true)
     public ModelAndView verReporteRecaudacionUnidad(@PathVariable("unidadVentaId") Long unidadVentaId) {
         UnidadVenta unidadVenta = unidadVentaRepository.findById(unidadVentaId)
                 .orElseThrow(() -> new RuntimeException("No se encontro la unidad de venta"));
-        ReporteVentaDTO reporte = pedidoService.generarReportePorUnidadVenta(unidadVenta);
+
+        LocalDate hoy = LocalDate.now();
+        Festival festivalActivo = festivalRepository.findAll().stream()
+                .filter(f -> f.getFechaInicio() != null && f.getFechaFin() != null)
+                .filter(f -> !hoy.isBefore(f.getFechaInicio()) && !hoy.isAfter(f.getFechaFin()))
+                .findFirst()
+                .orElse(festivalRepository.findAll().stream()
+                        .filter(f -> f.getFechaFin() != null)
+                        .max((a,b) -> a.getFechaFin().compareTo(b.getFechaFin()))
+                        .orElse(null));
+
+        var todosLosPedidos = pedidoRepository.findByUnidadVentaIdConDetalles(unidadVentaId);
+        var pedidosFiltrados = todosLosPedidos;
+        if (festivalActivo != null) {
+            pedidosFiltrados = todosLosPedidos.stream()
+                    .filter(p -> p.getFechaPedido() != null)
+                    .filter(p -> !p.getFechaPedido().isBefore(festivalActivo.getFechaInicio())
+                            && !p.getFechaPedido().isAfter(festivalActivo.getFechaFin()))
+                    .toList();
+        }
+
+        double totalFestival = pedidosFiltrados.stream().mapToDouble(p -> p.getTotal()).sum();
+        double totalHistorico = todosLosPedidos.stream().mapToDouble(p -> p.getTotal()).sum();
+
+        // Reporte filtrado = solo Oktoberfest activo
+        ReporteVentaDTO reporte = new ReporteVentaDTO();
+        if (festivalActivo != null) {
+            reporte.setFestivalId(festivalActivo.getId());
+            reporte.setNombreFestival(festivalActivo.getNombre());
+        }
+        reporte.setRecaudacionTotal(totalFestival);
+        reporte.setCantidadPedidos(pedidosFiltrados.size());
+
         ModelAndView mav = new ModelAndView("pedido/reporte-recaudacion");
         mav.addObject("reporte", reporte);
+        mav.addObject("unidadVenta", unidadVenta);
+        mav.addObject("festivalActivo", festivalActivo);
+        mav.addObject("pedidosFiltrados", pedidosFiltrados);
+        mav.addObject("totalFestival", totalFestival);
+        mav.addObject("totalHistorico", totalHistorico);
+        mav.addObject("cantidadFestival", pedidosFiltrados.size());
+        mav.addObject("cantidadHistorico", todosLosPedidos.size());
         return mav;
     }
 

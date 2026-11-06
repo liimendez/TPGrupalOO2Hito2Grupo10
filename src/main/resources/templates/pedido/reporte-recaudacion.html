@@ -1,53 +1,53 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="UTF-8">
     <title>Reporte de Recaudación - Unidad de Venta</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
-
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card shadow">
                 <div class="card-header bg-primary text-white text-center">
                     <h3>Reporte de Recaudación</h3>
+                    <small th:if="${festivalActivo != null}" th:text="${festivalActivo.nombre + ' (' + festivalActivo.fechaInicio + ' al ' + festivalActivo.fechaFin + ')'}">Oktoberfest</small>
                 </div>
                 <div class="card-body">
-
                     <div class="mb-4 text-center">
                         <h4 class="text-muted">Unidad de Venta:</h4>
-                        <h2 class="text-primary" th:text="${reporte.nombreFestival}">Nombre de la Unidad</h2>
+                        <h2 class="text-primary" th:text="${unidadVenta.nombreComercial}">mostaza</h2>
+                        <small class="text-muted" th:text="'Código: ' + ${unidadVenta.codigoUnico} + ' | Festival: ' + ${reporte.nombreFestival}">Código: MC123 | Festival: Oktoberfest</small>
                     </div>
-
                     <hr>
-
                     <div class="row text-center my-4">
                         <div class="col-md-6">
                             <div class="p-3 border bg-white rounded shadow-sm">
                                 <h5>Recaudación Total</h5>
-                                <h3 class="text-success" th:text="${'$ ' + #numbers.formatDecimal(reporte.recaudacionTotal, 1, 'DEFAULT', 2, 'DEFAULT')}">$ 0.00</h3>
+                                <small class="text-muted" th:text="${reporte.nombreFestival}">Oktoberfest</small>
+                                <h3 class="text-success" th:text="${'$ ' + #numbers.formatDecimal(reporte.recaudacionTotal, 1, 'DEFAULT', 2, 'DEFAULT')}">$ 151.000,00</h3>
+                                <small class="text-muted" th:if="${totalHistorico != null}" th:text="'Histórico total: $' + ${#numbers.formatDecimal(totalHistorico, 1, 'DEFAULT', 2, 'DEFAULT')}">Histórico: $297.000</small>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="p-3 border bg-white rounded shadow-sm">
                                 <h5>Cantidad de Pedidos</h5>
-                                <h3 class="text-info" th:text="${reporte.cantidadPedidos}">0</h3>
+                                <small class="text-muted" th:text="${reporte.nombreFestival}">Oktoberfest</small>
+                                <h3 class="text-info" th:text="${reporte.cantidadPedidos}">3</h3>
+                                <small class="text-muted" th:if="${cantidadHistorico != null}" th:text="'Histórico: ' + ${cantidadHistorico} + ' pedidos'">Histórico: 5</small>
                             </div>
                         </div>
                     </div>
-
-
                     <div class="text-center mt-4">
-                        <a href="javascript:history.back()" class="btn btn-secondary">Volver</a>
+                        <a th:href="@{/responsable/unidades}" class="btn btn-secondary">Volver</a>
+                        <!-- Solo admin ve Dashboard -->
+                        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/dashboard}" class="btn btn-warning ms-2" style="background:#facc15; border:none; color:#111; font-weight:700">Dashboard</a>
                     </div>
-
                 </div>
             </div>
         </div>
     </div>
 </div>
-
 </body>
 </html>

@@ -34,19 +34,38 @@ public class LiquidacionDeHaberService implements ILiquidacionDeHaberService {
     @Override public LiquidacionDeHaber insertOrUpdate(LiquidacionDeHaber l) { return liquidacionRepo.save(l); }
     @Override public boolean remove(Long id) { if(liquidacionRepo.existsById(id)){ liquidacionRepo.deleteById(id); return true;} return false; }
 
-    // FIX: calcula dias reales trabajados dentro del festival
+
+// FIX: elige el festival ACTIVO o el de fecha fin más reciente, no uno al azar
     private long calcularDiasReales(Personal p, UnidadVenta uv) {
         long dias = 30;
         try {
             if (uv != null && uv.getFestivales() != null && !uv.getFestivales().isEmpty()) {
-                Festival fest = uv.getFestivales().iterator().next();
+                LocalDate hoy = LocalDate.now();
+                Festival fest = null;
+
+                // 1) Buscar festival activo hoy
+                for (Festival f : uv.getFestivales()) {
+                    if (f.getFechaInicio() != null && f.getFechaFin() != null &&
+                            !hoy.isBefore(f.getFechaInicio()) && !hoy.isAfter(f.getFechaFin())) {
+                        fest = f;
+                        break;
+                    }
+                }
+                // 2) Si no hay activo, el de fecha fin más lejana (Oktoberfest)
+                if (fest == null) {
+                    fest = uv.getFestivales().stream()
+                            .filter(f -> f.getFechaFin() != null)
+                            .max((a,b) -> a.getFechaFin().compareTo(b.getFechaFin()))
+                            .orElse(uv.getFestivales().iterator().next());
+                }
+
                 if (fest.getFechaInicio() != null && fest.getFechaFin() != null) {
                     LocalDate inicioReal = fest.getFechaInicio();
-                    // Si el empleado entró después que empezó el festival, cobra desde su ingreso
                     if (p != null && p.getFechaIngreso() != null && p.getFechaIngreso().isAfter(inicioReal)) {
                         inicioReal = p.getFechaIngreso();
                     }
-                    long diff = ChronoUnit.DAYS.between(inicioReal, fest.getFechaFin());
+                    // +1 para contar ambos extremos inclusive
+                    long diff = ChronoUnit.DAYS.between(inicioReal, fest.getFechaFin()) + 1;
                     if (diff > 0) dias = diff;
                     else dias = 1;
                 }
@@ -115,6 +134,21 @@ public class LiquidacionDeHaberService implements ILiquidacionDeHaberService {
         LiquidacionDeHaber liq = liquidacionRepo.findById(liquidacionId)
                 .orElseThrow(() -> new RuntimeException("Liquidación no encontrada ID: " + liquidacionId));
 
+        Personal p = liq.getPersonal();
+        UnidadVenta uv = liq.getUnidadVenta();
+        Costos costos = costosRepo.findAll().stream().findFirst().orElse(null);
+        int anios = 0;
+        try { anios = personalService.getAntiguedadAnios(p.getId()); } catch(Exception e){ anios = 0; }
+        BigDecimal sueldoBase = costos != null && costos.getSueldoBase() != null ? costos.getSueldoBase() : new BigDecimal("100000");
+        BigDecimal plus = BigDecimal.ZERO;
+        String categoriaNombre = "CAJERO";
+        if (p instanceof Cocinero c && c.getCategoriaCocina() != null) {
+            plus = c.getCategoriaCocina().getPlusFijo() != null ? c.getCategoriaCocina().getPlusFijo() : new BigDecimal("150000");
+            categoriaNombre = c.getCategoriaCocina().getNombre();
+        }
+        int tramos = (liq.getDiasDeTrabajo() / 15) + 1;
+        BigDecimal antiguedad = BigDecimal.valueOf(anios * 5000L);
+
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4);
         try {
@@ -128,7 +162,6 @@ public class LiquidacionDeHaberService implements ILiquidacionDeHaberService {
             Paragraph titulo = new Paragraph("EPICENTRO GOURMET S.A.", tituloFont);
             titulo.setAlignment(Element.ALIGN_CENTER);
             document.add(titulo);
-
             Paragraph sub = new Paragraph("RECIBO DE SUELDO - Liquidación N°: " + liq.getId(), subTituloFont);
             sub.setAlignment(Element.ALIGN_CENTER);
             sub.setSpacingAfter(20);
@@ -136,21 +169,57 @@ public class LiquidacionDeHaberService implements ILiquidacionDeHaberService {
 
             PdfPTable tableInfo = new PdfPTable(2);
             tableInfo.setWidthPercentage(100);
-            tableInfo.addCell(new Paragraph("Empleado: " + liq.getPersonal().getNombre() + " " + liq.getPersonal().getApellido(), textoNormal));
-            tableInfo.addCell(new Paragraph("DNI: " + liq.getPersonal().getDni(), textoNormal));
-            tableInfo.addCell(new Paragraph("Fecha de Liquidación: " + liq.getFechaLiquidacion(), textoNormal));
-            tableInfo.addCell(new Paragraph("Unidad de Venta: " + (liq.getUnidadVenta() != null ? liq.getUnidadVenta().getNombreComercial() : "N/A"), textoNormal));
-            tableInfo.addCell(new Paragraph("Días Trabajados: " + liq.getDiasDeTrabajo() + " (desde " + (liq.getPersonal().getFechaIngreso() != null ? liq.getPersonal().getFechaIngreso() : "inicio festival") + ")", textoNormal));
-            tableInfo.addCell(new Paragraph("Fórmula: (int(dias/15)+1) * 50% * (Base+Plus/Antig)", textoNormal));
+            tableInfo.addCell(new Paragraph("Empleado: " + p.getNombre() + " " + p.getApellido(), textoNormal));
+            tableInfo.addCell(new Paragraph("DNI: " + p.getDni(), textoNormal));
+            tableInfo.addCell(new Paragraph("Fecha Liquidación: " + liq.getFechaLiquidacion(), textoNormal));
+            tableInfo.addCell(new Paragraph("Unidad: " + (uv != null ? uv.getNombreComercial() : "N/A") + " - " + (uv != null ? uv.getCodigoUnico() : ""), textoNormal));
+            tableInfo.addCell(new Paragraph("Días Trabajados: " + liq.getDiasDeTrabajo() + " (desde " + (p.getFechaIngreso() != null ? p.getFechaIngreso() : "inicio") + ")", textoNormal));
+            tableInfo.addCell(new Paragraph("Antigüedad: " + anios + " años | Categoría: " + categoriaNombre, textoNormal));
             tableInfo.setSpacingAfter(20);
             document.add(tableInfo);
 
-            PdfPTable tableDetalle = new PdfPTable(2);
+            PdfPTable tableDetalle = new PdfPTable(4);
             tableDetalle.setWidthPercentage(100);
-            tableDetalle.addCell(new Paragraph("Concepto", textoBold));
-            tableDetalle.addCell(new Paragraph("Monto", textoBold));
-            tableDetalle.addCell(new Paragraph("Total Neto a Cobrar", textoNormal));
-            tableDetalle.addCell(new Paragraph("$ " + String.format("%.2f", liq.getTotalACobrar()), textoNormal));
+            tableDetalle.addCell(new Paragraph("COD", textoBold));
+            tableDetalle.addCell(new Paragraph("CONCEPTO", textoBold));
+            tableDetalle.addCell(new Paragraph("CANT.", textoBold));
+            tableDetalle.addCell(new Paragraph("MONTO", textoBold));
+
+            tableDetalle.addCell(new Paragraph("1000", textoNormal));
+            tableDetalle.addCell(new Paragraph("Sueldo Básico Convenio", textoNormal));
+            tableDetalle.addCell(new Paragraph(String.valueOf(liq.getDiasDeTrabajo()), textoNormal));
+            tableDetalle.addCell(new Paragraph("$ " + sueldoBase, textoNormal));
+
+            tableDetalle.addCell(new Paragraph("1001", textoNormal));
+            tableDetalle.addCell(new Paragraph("Antigüedad (" + anios + " años x $5.000)", textoNormal));
+            tableDetalle.addCell(new Paragraph(String.valueOf(anios), textoNormal));
+            tableDetalle.addCell(new Paragraph("$ " + antiguedad, textoNormal));
+
+            tableDetalle.addCell(new Paragraph("1002", textoNormal));
+            tableDetalle.addCell(new Paragraph("Plus por Categoría - " + categoriaNombre, textoNormal));
+            tableDetalle.addCell(new Paragraph("1", textoNormal));
+            tableDetalle.addCell(new Paragraph("$ " + plus, textoNormal));
+
+            tableDetalle.addCell(new Paragraph("1003", textoNormal));
+            tableDetalle.addCell(new Paragraph("Factor Festival (50% - PDF punto 4)", textoNormal));
+            tableDetalle.addCell(new Paragraph("0,5", textoNormal));
+            tableDetalle.addCell(new Paragraph("-", textoNormal));
+
+            tableDetalle.addCell(new Paragraph("1004", textoNormal));
+            tableDetalle.addCell(new Paragraph("Tramos Festival = int(" + liq.getDiasDeTrabajo() + "/15)+1", textoNormal));
+            tableDetalle.addCell(new Paragraph(String.valueOf(tramos), textoNormal));
+            tableDetalle.addCell(new Paragraph("-", textoNormal));
+
+            tableDetalle.addCell(new Paragraph("", textoBold));
+            tableDetalle.addCell(new Paragraph("Cálculo: (" + sueldoBase + " + " + antiguedad + " + " + plus + ") * 0,5 * " + tramos, textoBold));
+            tableDetalle.addCell(new Paragraph("", textoBold));
+            tableDetalle.addCell(new Paragraph("$ " + String.format("%.2f", liq.getTotalACobrar()), textoBold));
+
+            tableDetalle.addCell(new Paragraph("", textoBold));
+            tableDetalle.addCell(new Paragraph("TOTAL BRUTO / NETO A COBRAR", textoBold));
+            tableDetalle.addCell(new Paragraph("", textoBold));
+            tableDetalle.addCell(new Paragraph("$ " + String.format("%.2f", liq.getTotalACobrar()), textoBold));
+
             document.add(tableDetalle);
             document.close();
         } catch (Exception e) {

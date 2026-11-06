@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-[#1a1d23] text-white min-h-screen">
+<header class="flex justify-between px-6 py-3 border-b border-yellow-500 bg-[#252830] text-xs">
+    <div class="text-yellow-400 font-bold">🍷 Epicentro Gourmet - Panel Admin</div>
+    <div><span th:text="'Admin: ' + ${#authentication.name}">Admin</span> | <a href="/logout" class="text-red-400">Salir</a> | <a href="/index" class="text-yellow-400">Volver a Festivales</a></div>
+</header>
+<div class="flex">
+    <aside class="w-48 bg-[#252830] p-3 min-h-screen border-r border-gray-700 text-xs">
+        <div class="bg-yellow-500 text-black p-2 rounded font-bold">Dashboard</div>
+        <a href="/index" class="block p-2 text-gray-400 mt-2">Festivales</a>
+        <a href="/usuarios/lista" class="block p-2 text-gray-400">Usuarios</a>
+        <a href="/festival/new" class="block p-2 text-gray-400">+ Nuevo Festival</a>
+    </aside>
+    <main class="flex-1 p-5">
+        <h1 class="text-yellow-400 font-bold mb-4">Vista General - <span th:text="${festivalActivoNombre}">Festival Activo</span></h1>
+
+        <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="bg-[#2c2c2c] p-4 rounded-xl border border-gray-700"><p class="text-xs text-gray-400">Festivales Activos</p><p class="text-xl font-bold" th:text="${festivalesActivos}">1</p><p class="text-xs text-gray-500">Total: <span th:text="${totalFestivales}">5</span></p></div>
+            <div class="bg-[#2c2c2c] p-4 rounded-xl border border-gray-700"><p class="text-xs text-gray-400">Unidades de Venta</p><p class="text-xl font-bold" th:text="${totalUnidades}">3</p></div>
+            <div class="bg-[#2c2c2c] p-4 rounded-xl border border-gray-700"><p class="text-xs text-gray-400">Usuarios</p><p class="text-xl font-bold" th:text="${totalUsers}">7</p></div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4">
+            <div class="col-span-2 bg-[#2c2c2c] p-4 rounded-xl border border-gray-700">
+                <h3 class="text-yellow-400 font-bold text-xs mb-4">Ranking de Ventas por Unidad (<span th:text="${festivalActivoNombre}">Festival Activo</span>)</h3>
+                <canvas id="chartUnidades" height="220"></canvas>
+            </div>
+
+            <div class="bg-[#2c2c2c] p-4 rounded-xl border border-gray-700">
+                <h3 class="text-yellow-400 font-bold text-xs mb-3">Top 3 Unidades con más ventas (<span th:text="${festivalActivoNombre}">Festival Activo</span>)</h3>
+                <div th:each="entry, stat : ${topUnidades}" class="flex justify-between py-2 border-b border-gray-700 text-xs">
+                    <span th:text="${stat.index+1} + '. ' + ${entry.key}">1. unidad</span>
+                    <span class="text-yellow-400 font-bold" th:text="'$' + ${#numbers.formatDecimal(entry.value,1,2)}">$0</span>
+                </div>
+                <div th:if="${topUnidades.isEmpty()}" class="text-xs text-gray-500 py-2">No hay ventas en el festival activo aún</div>
+
+                <h3 class="text-yellow-400 font-bold text-xs mt-4">Recaudación por Unidad (<span th:text="${festivalActivoNombre}">Festival Activo</span>)</h3>
+                <div th:each="entry : ${recaudacionUnidad}" class="flex justify-between text-xs py-1 text-gray-300">
+                    <span th:text="${entry.key}">unidad</span><span th:text="'$' + ${#numbers.formatDecimal(entry.value,1,2)}">0</span>
+                </div>
+                <div class="mt-4 text-xs text-gray-500">Pedidos: <span th:text="${pedidosCount}">0</span> | Total: $<span th:text="${#numbers.formatDecimal(totalRecaudado,1,2)}">0</span></div>
+            </div>
+        </div>
+
+        <div class="mt-6">
+            <h3 class="text-yellow-400 font-bold text-sm mb-3">📊 Recaudación Total por Festival + Ranking por Unidad en cada Festival</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div th:each="fest : ${todosFestivales}" th:if="${rankingPorFestival.containsKey(fest)}" class="bg-[#2c2c2c] p-4 rounded-xl border border-gray-700">
+                    <div class="flex justify-between items-center mb-3">
+                        <div>
+                            <p class="text-yellow-400 font-bold text-xs" th:text="${fest.nombre}">Festival</p>
+                            <p class="text-gray-400 text-xs" th:text="${fest.temporada + ' | ' + fest.fechaInicio + ' al ' + fest.fechaFin}">fechas</p>
+                        </div>
+                        <div class="bg-yellow-500 text-black px-3 py-1 rounded-full font-bold text-xs" th:text="'Total: $' + ${#numbers.formatDecimal(totalPorFestival.get(fest),1,2)}">Total</div>
+                    </div>
+                    <table class="w-full text-xs">
+                        <thead><tr class="text-gray-500 border-b border-gray-700"><th class="text-left py-1">Unidad</th><th class="text-right">Recaudación</th><th class="text-right">%</th></tr></thead>
+                        <tbody>
+                        <tr th:each="u : ${rankingPorFestival.get(fest)}" class="border-b border-gray-800">
+                            <td class="py-1.5 text-white" th:text="${u.key}">unidad</td>
+                            <td class="py-1.5 text-right text-yellow-400 font-bold" th:text="'$' + ${#numbers.formatDecimal(u.value,1,2)}">$0</td>
+                            <td class="py-1.5 text-right text-gray-400" th:text="${#numbers.formatDecimal(u.value * 100 / totalPorFestival.get(fest),1,1)} + '%'">0%</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-5 bg-[#2c2c2c] p-4 rounded-xl border border-gray-700">
+            <h3 class="text-yellow-400 font-bold text-xs mb-3">Próximos Festivales (activos y futuros)</h3>
+            <table class="w-full text-xs"><tr th:each="f : ${festivales}" class="border-b border-gray-800"><td class="py-1.5" th:text="${f.nombre}">festival</td><td th:text="${f.temporada}">temp</td><td th:text="${f.fechaInicio} + ' al ' + ${f.fechaFin}">fechas</td></tr></table>
+        </div>
+    </main>
+</div>
+
+<script th:inline="javascript">
+    const dataUnidad = /*[[${recaudacionUnidad}]]*/ {};
+    const ctx = document.getElementById('chartUnidades');
+    if(ctx){
+        const labels = Object.keys(dataUnidad);
+        const values = Object.values(dataUnidad);
+        if(labels.length > 0){
+            new Chart(ctx, {
+                type: 'bar',
+                data: { labels: labels, datasets: [{ label: 'Recaudación $', data: values, backgroundColor: '#facc15', borderRadius: 6 }] },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { color: '#333' } }, x: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { display: false } } } }
+            });
+        } else {
+            ctx.parentElement.innerHTML = '<p class="text-xs text-gray-500">No hay ventas en el festival activo</p>';
+        }
+    }
+</script>
+</body>
+</html>

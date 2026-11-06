@@ -22,31 +22,48 @@
         <div class="ticket-header p-4 text-white">
             <div class="d-flex justify-content-between">
                 <span class="badge badge-amarillo rounded-pill px-3"><i class="bi bi-receipt"></i> COMPROBANTE</span>
-                <span class="badge bg-white text-dark rounded-pill px-3" th:text="'ID: ' + ${detalle.unidadId}">ID: 1</span>
+                <span class="badge bg-white text-dark rounded-pill px-3" th:text="'ID: ' + ${detalle.unidadId}">ID: 4</span>
             </div>
-            <h3 class="fw-bold mt-3 mb-1 text-white" th:text="'Canon - ' + ${detalle.nombreComercial}">Canon - Mc Donalds</h3>
-            <small style="color:#a3a3a3">Detalle por participación</small>
+            <h3 class="fw-bold mt-3 mb-1 text-white" th:text="'Canon - ' + ${detalle.nombreComercial}">Canon - mostaza</h3>
+
             <div class="row g-2 mt-4">
-                <div class="col-6"><div class="bg-white bg-opacity-10 border border-secondary rounded-3 p-3 text-center"><small class="text-secondary d-block">SUPERFICIE</small><span class="fw-bold text-warning" th:text="${detalle.superficieM2} + ' m²'">12.0 m²</span></div></div>
-                <div class="col-6"><div class="bg-white bg-opacity-10 border border-secondary rounded-3 p-3 text-center"><small class="text-secondary d-block">DÍAS</small><span class="fw-bold text-warning" th:text="${detalle.diasFestival}">3</span></div></div>
+                <div class="col-6">
+                    <div class="bg-white bg-opacity-10 border border-secondary rounded-3 p-3 text-center">
+                        <small class="text-secondary d-block">SUPERFICIE</small>
+                        <span class="fw-bold text-warning" th:text="${detalle.superficieM2} + ' m²'">10.0 m²</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="bg-white bg-opacity-10 border border-secondary rounded-3 p-3 text-center">
+                        <small class="text-secondary d-block">TIPO</small>
+                        <!-- FIX: FoodTruck no tiene costoMontaje, Puesto sí -->
+                        <span class="fw-bold text-warning" th:text="${detalle.costoMontaje == 0 ? 'FOOD TRUCK' : 'PUESTO DESARMABLE'}">FOOD TRUCK</span>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="p-4" style="background:#fafafa">
+            <!-- 1. Superficie siempre -->
             <div class="line p-3 d-flex justify-content-between mb-2">
-                <div><i class="bi bi-rulers me-2"></i><strong>Costo Superficie</strong><br><small class="text-muted ms-4" th:text="${detalle.superficieM2} + ' × $500'">12 × $500</small></div>
-                <span class="badge badge-amarillo rounded-pill px-3 py-2" th:text="'$' + ${detalle.costoSuperficieTotal}">$6000</span>
+                <div><i class="bi bi-rulers me-2"></i><strong>Costo Superficie</strong><br><small class="text-muted ms-4" th:text="${detalle.superficieM2} + ' m² × $500' + ' = $' + ${detalle.costoSuperficieTotal}">10 m² × $500</small></div>
+                <span class="badge badge-amarillo rounded-pill px-3 py-2" th:text="'$' + ${#numbers.formatDecimal(detalle.costoSuperficieTotal, 1, 2)}">$5000.00</span>
             </div>
+            <!-- 2. Electricidad - siempre visible, 0 si no requiere -->
             <div class="line p-3 d-flex justify-content-between mb-2">
-                <div><i class="bi bi-tools me-2"></i><strong>Costo Montaje</strong></div>
-                <span class="badge bg-dark text-warning border-warning rounded-pill px-3 py-2" th:text="'$' + ${detalle.costoMontaje}">$10</span>
+                <div><i class="bi bi-lightning-charge me-2 text-warning"></i><strong>Plus Electricidad</strong><br><small class="text-muted ms-4" th:text="${detalle.costoElectricidad > 0 ? 'FoodTruck con conexión eléctrica (+$2000)' : 'FoodTruck sin conexión eléctrica ($0) / Puesto no aplica'}">Detalle</small></div>
+                <span class="badge badge-amarillo rounded-pill px-3 py-2" th:text="'$' + ${#numbers.formatDecimal(detalle.costoElectricidad, 1, 2)}">$0.00</span>
             </div>
-            <div class="line p-3 d-flex justify-content-between mb-3">
-                <div><i class="bi bi-lightning-charge me-2 text-warning"></i><strong>Costo Electricidad</strong><br><small class="text-muted ms-4" th:text="${detalle.diasFestival} + ' × $2000'">3 × $2000</small></div>
-                <span class="badge badge-amarillo rounded-pill px-3 py-2" th:text="'$' + ${detalle.costoElectricidad}">$6000</span>
+            <!-- 3. Montaje - siempre visible, 0 si es FoodTruck -->
+            <div class="line p-3 d-flex justify-content-between mb-2">
+                <div><i class="bi bi-tools me-2"></i><strong>Menos Montaje</strong><br><small class="text-muted ms-4" th:text="${detalle.costoMontaje > 0 ? 'Puesto: tiempo × $10 (descuento)' : 'FoodTruck no tiene montaje'}">Detalle</small></div>
+                <span class="badge bg-dark text-warning border border-warning rounded-pill px-3 py-2" th:text="${detalle.costoMontaje > 0 ? '-$' + #numbers.formatDecimal(detalle.costoMontaje, 1, 2) : '$0.00'}">$0.00</span>
             </div>
             <div class="total-box p-4 d-flex justify-content-between align-items-center">
-                <div><small class="text-secondary text-uppercase">Total Canon</small><br><small style="color:#737373">a pagar</small></div>
-                <span class="badge bg-warning text-dark px-4 py-3 fs-5 rounded-pill fw-bold" th:text="'$' + ${detalle.totalCanon}">$12010.000</span>
+                <div>
+                    <small class="text-secondary text-uppercase">Total Canon</small><br>
+                    <small style="color:#737373" th:text="${detalle.costoMontaje == 0 ? 'Fórmula FoodTruck: (m²×500) + eléctrica' : 'Fórmula Puesto: (m²×500) - montaje'}">Fórmula</small>
+                </div>
+                <span class="badge bg-warning text-dark px-4 py-3 fs-5 rounded-pill fw-bold" th:text="'$' + ${#numbers.formatDecimal(detalle.totalCanon, 1, 2)}">$5000.00</span>
             </div>
         </div>
     </div>
