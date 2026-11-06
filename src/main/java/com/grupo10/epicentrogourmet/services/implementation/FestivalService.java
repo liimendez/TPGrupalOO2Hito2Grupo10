@@ -138,7 +138,9 @@ public class FestivalService implements IFestivalService {
     // PUNTO 8 - Plato Estrella
     @Override
     public PlatoDTO getPlatoEstrella(Long festivalId, Long unidadVentaId) {
-        List<Pedido> pedidos = pedidoRepository.findByFestivalIdAndUnidadVentaId(festivalId, unidadVentaId);
+
+        List<Pedido> pedidos = pedidoRepository.findPedidosPlatoEstrellaPorFestival(festivalId, unidadVentaId);
+
         if (pedidos.isEmpty()) throw new RuntimeException("No hay pedidos para esa unidad en ese festival");
         Map<Long, Long> cantidadPorPlato = new HashMap<>();
         Map<Long, Plato> platoPorId = new HashMap<>();
@@ -152,7 +154,7 @@ public class FestivalService implements IFestivalService {
         }
         Long idGanador = cantidadPorPlato.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElseThrow(() -> new RuntimeException("No hay platos vendidos"));
         Plato platoEstrella = platoPorId.get(idGanador);
-        return PlatoDTO.builder().id(platoEstrella.getId()).nombre(platoEstrella.getNombre()).precioVenta(platoEstrella.getPrecioVenta()).costoProduccion(platoEstrella.getCostoProduccion()).unidadVentaId(platoEstrella.getUnidadVenta() != null ? platoEstrella.getUnidadVenta().getId() : null).nombreComercialUnidad(platoEstrella.getUnidadVenta() != null ? platoEstrella.getUnidadVenta().getNombreComercial() : null).build();
+        return PlatoDTO.builder().id(platoEstrella.getId()).nombre(platoEstrella.getNombre()).precioVenta(platoEstrella.getPrecioVenta()).costoProduccion(platoEstrella.getCostoProduccion()).unidadVentaId(platoEstrella.getUnidadVenta() != null ? platoEstrella.getUnidadVenta().getId() : null).nombreComercialUnidad(platoEstrella.getUnidadVenta() != null ? platoEstrella.getUnidadVenta().getNombreComercial() : null).cantidadVendida(cantidadPorPlato.get(idGanador)).build();
     }
 
     // PUNTO 3 - Ranking por Recaudación (ADMIN)
