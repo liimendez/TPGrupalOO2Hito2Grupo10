@@ -101,7 +101,7 @@ public class PedidoController {
         var pedidos = pedidoRepository.findByUnidadVentaIdConDetalles(unidadVentaId);
         ModelAndView mav = new ModelAndView("pedido/lista");
         mav.addObject("unidadVenta", uv);
-        // FIX: acá estaba el 500 - ahora mandamos tickets
+
         mav.addObject("tickets", pedidoService.toDTOList(pedidos));
         return mav;
     }

@@ -73,7 +73,7 @@ public class UnidadVentaController {
         return mav;
     }
 
-    // ALIAS para que /detalle/1 funcione y muestre hamburguesas para agregar pedido
+
     @GetMapping("/detalle/{id}")
     public ModelAndView detalleAlias(@PathVariable Long id) {
         return new ModelAndView("redirect:/unidad-venta/" + id);
