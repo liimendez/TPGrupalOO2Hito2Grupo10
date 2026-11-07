@@ -20,7 +20,7 @@ public class MiUnidadController {
     }
 
     @GetMapping
-    public ModelAndView miUnidad() {
+    public ModelAndView miUnidad(@RequestParam(value = "platoError", required = false) String platoError) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String correo = auth.getName();
 
@@ -29,6 +29,9 @@ public class MiUnidadController {
         ModelAndView mav = new ModelAndView("unidad-venta/mi-unidad");
         mav.addObject("unidad", unidad);
         mav.addObject("plato", new Plato());
+        if (platoError != null) {
+            mav.addObject("platoError", traducirError(platoError));
+        }
         return mav;
     }
 
@@ -37,31 +40,65 @@ public class MiUnidadController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         UnidadVenta unidad = unidadVentaService.findByCorreoResponsable(auth.getName());
 
+        String error = validarPlato(plato);
+        if (error != null) {
+            return new ModelAndView("redirect:/mi-unidad?platoError=" + error);
+        }
+
         unidadVentaService.agregarPlato(unidad.getId(), plato);
         return new ModelAndView("redirect:/mi-unidad?platoSuccess=true");
     }
 
     @GetMapping("/plato/eliminar/{id}")
-    public ModelAndView eliminarPlato(@PathVariable Long id) {
+    public ModelAndView eliminarPlato(@PathVariable("id") Long id) {
         unidadVentaService.eliminarPlato(id);
         return new ModelAndView("redirect:/mi-unidad?platoDeleted=true");
     }
 
     @GetMapping("/plato/editar/{id}")
-    public ModelAndView editarPlatoForm(@PathVariable Long id) {
+    public ModelAndView editarPlatoForm(@PathVariable("id") Long id) {
         Plato plato = unidadVentaService.findPlatoById(id);
         ModelAndView mav = new ModelAndView("unidad-venta/editar-plato");
         mav.addObject("plato", plato);
+        mav.addObject("origen", "mi-unidad");
         return mav;
     }
 
     @PostMapping("/plato/editar/{id}")
-    public ModelAndView editarPlato(@PathVariable Long id, @ModelAttribute("plato") Plato plato) {
+    public ModelAndView editarPlato(@PathVariable("id") Long id, @ModelAttribute("plato") Plato plato) {
+        String error = validarPlato(plato);
+        if (error != null) {
+            return new ModelAndView("redirect:/mi-unidad?platoError=" + error);
+        }
         unidadVentaService.modificarPlato(id, plato);
         return new ModelAndView("redirect:/mi-unidad?platoEdited=true");
     }
 
 
+    private String validarPlato(Plato plato) {
+        if (plato.getNombre() == null || plato.getNombre().trim().isEmpty()) {
+            return "nombreVacio";
+        }
+        if (plato.getPrecioVenta() <= 0) {
+            return "precioInvalido";
+        }
+        if (plato.getCostoProduccion() <= 0) {
+            return "costoInvalido";
+        }
+        if (plato.getCostoProduccion() >= plato.getPrecioVenta()) {
+            return "costoMayorQuePrecio";
+        }
+        return null;
+    }
 
 
+    private String traducirError(String codigo) {
+        switch (codigo) {
+            case "nombreVacio": return "El nombre del plato es obligatorio";
+            case "precioInvalido": return "El precio de venta debe ser mayor a 0";
+            case "costoInvalido": return "El costo de producción debe ser mayor a 0. No puede ser $0.";
+            case "costoMayorQuePrecio": return "El costo no puede ser mayor o igual al precio. Estarías perdiendo dinero.";
+            default: return "Error al guardar el plato";
+        }
+    }
 }

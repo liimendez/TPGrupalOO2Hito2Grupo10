@@ -43,7 +43,7 @@ public class AdminDashboardController {
 
         List<Pedido> pedidos = pedidoRepo.findAll();
 
-        // Festival ACTIVO actual (Oktoberfest ahora 2026-11-03 a 2027-01-01)
+        // Festival ACTIVO actual
         Festival festivalActivo = proximosFestivales.stream()
                 .filter(f -> f.getFechaInicio() != null && f.getFechaFin() != null)
                 .filter(f -> !hoy.isBefore(f.getFechaInicio()) && !hoy.isAfter(f.getFechaFin()))
