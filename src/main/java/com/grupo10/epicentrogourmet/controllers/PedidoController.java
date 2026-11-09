@@ -129,6 +129,8 @@ public class PedidoController {
         DetallePedido detalle = new DetallePedido();
         detalle.setCantidad(cantidad);
         detalle.setPlato(plato);
+        // FIX: congelar el precio al momento de la venta - si mañana cambia el precio del plato, este pedido NO se actualiza
+        detalle.setSubtotal(cantidad * plato.getPrecioVenta());
         detalle.setPedido(pedido);
         pedido.getDetalles().add(detalle);
         pedidoRepository.save(pedido);
@@ -206,6 +208,7 @@ public class PedidoController {
             DetallePedido det = new DetallePedido();
             det.setPlato(plato);
             det.setCantidad(cant);
+            det.setSubtotal(cant * plato.getPrecioVenta());
             det.setPedido(pedido);
             pedido.getDetalles().add(det);
             agregados++;

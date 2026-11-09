@@ -26,7 +26,7 @@ public class Pedido {
 	@Transient
 	public double getTotal() {
 		return detalles.stream()
-				.mapToDouble(d -> d.getCantidad() * d.getPlato().getPrecioVenta())
+				.mapToDouble(d -> d.getSubtotal())
 				.sum();
 	}
 

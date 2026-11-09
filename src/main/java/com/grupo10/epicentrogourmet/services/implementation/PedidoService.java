@@ -86,7 +86,7 @@ public class PedidoService implements IPedidoService {
                     .pedidoId(pedido.getId())
                     .platoId(d.getPlato().getId())
                     .nombrePlato(d.getPlato().getNombre())
-                    .subtotal(d.getCantidad() * d.getPlato().getPrecioVenta())
+                    .subtotal(d.getSubtotal())
                     .build();
         }).toList();
 
