@@ -12,7 +12,7 @@ public class DetallePedido {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-
+	private double subtotal; // cantidad * precioVenta al momento de la venta
 	private int cantidad;
 
 	@ManyToOne(fetch = FetchType.LAZY)
