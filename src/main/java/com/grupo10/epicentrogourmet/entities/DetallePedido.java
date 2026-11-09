@@ -22,4 +22,10 @@ public class DetallePedido {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "plato_id")
 	private Plato plato;
+
+	@Transient
+	public double getPrecioUnitario() {
+		return cantidad > 0 ? subtotal / cantidad : 0;
+
+	}
 }

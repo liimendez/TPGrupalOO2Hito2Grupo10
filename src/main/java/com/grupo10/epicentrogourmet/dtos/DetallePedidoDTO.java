@@ -10,4 +10,5 @@ public class DetallePedidoDTO {
     private Long platoId;
     private String nombrePlato;
     private double subtotal;
+    private double precioUnitario;
 }

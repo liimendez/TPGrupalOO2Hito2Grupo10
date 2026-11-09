@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <link rel="icon" type="image/svg+xml" href="/img/favicon-platos.svg">
-<title>Tickets</title>
+    <title>Tickets</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body{background:#1a1d23!important}
         .ticket{background:#fefefe;color:#111;border-radius:12px;padding:22px;font-family:'Courier New',monospace;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:380px;min-width:320px}
         .ticket-header{border-bottom:2px dashed #111;padding-bottom:10px;margin-bottom:10px;text-align:center}
-        .ticket-row{display:flex;justify-content:space-between;font-size:13px;margin:3px 0}
+        .ticket-row{display:flex;justify-content:space-between;align-items:flex-start;font-size:13px;margin:5px 0;gap:10px}
+        .ticket-row .det-nombre{flex:1;word-break:break-word;line-height:1.2}
+        .ticket-row .det-precio-unit{font-size:11px;color:#666;display:block}
+        .ticket-row .det-subtotal{white-space:nowrap;font-weight:bold}
         .ticket-divider{border-top:2px dashed #111;margin:10px 0}
         .ticket-total{display:flex;justify-content:space-between;font-weight:bold;font-size:16px;margin-top:8px}
     </style>
@@ -29,10 +32,12 @@
                 <small th:text="'Ticket #' + ${ticket.id} + ' - ' + ${ticket.fechaPedido}"></small>
             </div>
 
-
             <div th:each="det : ${ticket.detalles}" class="ticket-row">
-                <span th:text="${det.cantidad} + 'x ' + ${det.nombrePlato}"></span>
-                <span th:text="'$' + ${det.subtotal}"></span>
+                <div class="det-nombre">
+                    <span th:text="${det.cantidad} + 'x ' + ${det.nombrePlato}"></span>
+                    <span class="det-precio-unit" th:text="'@ $' + ${det.precioUnitario} + ' c/u'"></span>
+                </div>
+                <span class="det-subtotal" th:text="'$' + ${det.subtotal}"></span>
             </div>
 
             <div class="ticket-divider"></div>

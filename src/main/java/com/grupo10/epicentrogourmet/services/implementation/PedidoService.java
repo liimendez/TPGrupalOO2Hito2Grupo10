@@ -42,12 +42,9 @@ public class PedidoService implements IPedidoService {
     @Override
     public ReporteVentaDTO generarReportePorUnidadVenta(UnidadVenta unidadVenta) {
         List<Pedido> pedidos = pedidoRepository.generarReportePorUnidadVenta(unidadVenta);
-        // ahora usamos tu getTotal() que ya está en la entity
         double recaudacionTotal = pedidos.stream().mapToDouble(Pedido::getTotal).sum();
         return new ReporteVentaDTO(unidadVenta.getId(), unidadVenta.getNombreComercial(), recaudacionTotal, pedidos.size());
     }
-
-
 
     @Override
     public String resolverNombreFestival(Pedido pedido) {
@@ -87,6 +84,7 @@ public class PedidoService implements IPedidoService {
                     .platoId(d.getPlato().getId())
                     .nombrePlato(d.getPlato().getNombre())
                     .subtotal(d.getSubtotal())
+                    .precioUnitario(d.getPrecioUnitario())
                     .build();
         }).toList();
 
