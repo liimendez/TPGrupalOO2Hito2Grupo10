@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <link rel="icon" type="image/svg+xml" href="/img/favicon-liquidacion.svg">
-<title>Liquidación Formal - Epicentro Gourmet</title>
+    <title>Liquidación Formal - Epicentro Gourmet</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background:#e9ecef; font-family: 'Courier New', monospace; }
@@ -62,9 +62,9 @@
                 <td class="text-end">-</td>
             </tr>
             <tr>
-                <td>1001</td><td>Antigüedad (<span th:text="${anios}">0</span> años x $5.000)</td>
+                <td>1001</td><td>Antigüedad (<span th:text="${anios}">0</span> años x $<span th:text="${costos != null ? #numbers.formatDecimal(costos.valorAntiguedadPorAnio, 1, 0) : '5.000'}">5.000</span>)</td>
                 <td class="text-end" th:text="${anios}">0</td>
-                <td class="text-end" th:text="${#numbers.formatDecimal(anios * 5000, 1, 2)}">0,00</td>
+                <td class="text-end" th:text="${costos != null ? #numbers.formatDecimal(anios * costos.valorAntiguedadPorAnio, 1, 2) : '0,00'}">0,00</td>
                 <td class="text-end">-</td>
             </tr>
             <tr>
@@ -77,26 +77,26 @@
                 </td>
                 <td class="text-end">-</td>
             </tr>
-            <tr><td>1003</td><td>Factor Festival (50% - PDF punto 4)</td><td class="text-end">0,5</td><td class="text-end">-</td><td class="text-end">-</td></tr>
+            <tr><td>1003</td><td>Factor Festival (<span th:text="${costos != null ? #numbers.formatDecimal(costos.factorFestival * 100, 1, 0) : '50'}">50</span>% - PDF punto 4)</td><td class="text-end" th:text="${costos != null ? costos.factorFestival : '0,5'}">0,5</td><td class="text-end">-</td><td class="text-end">-</td></tr>
             <tr style="background:#fff3cd">
                 <td>1004</td>
-                <td>Tramos Festival = int(<span th:text="${liquidacion.diasDeTrabajo}">60</span>/15)+1</td>
+                <td>Tramos Festival = int(<span th:text="${liquidacion.diasDeTrabajo}">60</span>/<span th:text="${costos != null ? costos.diasPorTramo : '15'}">15</span>)+1</td>
                 <td class="text-end" th:text="${tramos}">5</td>
                 <td class="text-end">-</td>
                 <td class="text-end">-</td>
             </tr>
-            <!-- CAJERO: (Base + Antigüedad) * 0,5 * Tramos -->
+            <!-- CAJERO: (Base + Antigüedad) * factor * Tramos -->
             <tr class="fw-bold table-warning" th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cajero)}">
                 <td colspan="3" class="text-end">
-                    Cálculo CAJERO: (<span th:text="${costos != null ? #numbers.formatDecimal(costos.sueldoBase,1,0) : '100.000'}">100.000</span> + <span th:text="${#numbers.formatDecimal(anios * 5000,1,0)}">0</span>) * 0,5 * <span th:text="${tramos}">5</span>
+                    Cálculo CAJERO: (<span th:text="${costos != null ? #numbers.formatDecimal(costos.sueldoBase,1,0) : '100.000'}">100.000</span> + <span th:text="${costos != null ? #numbers.formatDecimal(anios * costos.valorAntiguedadPorAnio,1,0) : '0'}">0</span>) * <span th:text="${costos != null ? costos.factorFestival : '0,5'}">0,5</span> * <span th:text="${tramos}">5</span>
                 </td>
                 <td class="text-end" th:text="'$ ' + ${#numbers.formatDecimal(sueldo, 1, 2)}">$ 250.000,00</td>
                 <td></td>
             </tr>
-            <!-- COCINERO: (Base + Plus) * 0,5 * Tramos -->
+            <!-- COCINERO: (Base + Plus) * factor * Tramos -->
             <tr class="fw-bold table-warning" th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cocinero)}">
                 <td colspan="3" class="text-end">
-                    Cálculo COCINA: (<span th:text="${costos != null ? #numbers.formatDecimal(costos.sueldoBase,1,0) : '100.000'}">100.000</span> + <span th:text="${#numbers.formatDecimal(personal.categoriaCocina.plusFijo,1,0)}">150.000</span>) * 0,5 * <span th:text="${tramos}">5</span>
+                    Cálculo COCINA: (<span th:text="${costos != null ? #numbers.formatDecimal(costos.sueldoBase,1,0) : '100.000'}">100.000</span> + <span th:text="${#numbers.formatDecimal(personal.categoriaCocina.plusFijo,1,0)}">150.000</span>) * <span th:text="${costos != null ? costos.factorFestival : '0,5'}">0,5</span> * <span th:text="${tramos}">5</span>
                 </td>
                 <td class="text-end" th:text="'$ ' + ${#numbers.formatDecimal(sueldo, 1, 2)}">$ 250.000,00</td>
                 <td></td>
@@ -109,8 +109,8 @@
             <div class="row">
                 <div class="col-8"><div class="border p-2 small">
                     <strong>Observaciones:</strong>
-                    <span th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cajero)}">Liquidación generada según fórmula oficial CAJERO: (Sueldo Base + Antigüedad) * 50% * Tramos. Tramos = int(dias/15)+1 según PDF punto 4.</span>
-                    <span th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cocinero)}">Liquidación generada según fórmula oficial COCINA: (Sueldo Base + Plus Categoría) * 50% * Tramos. Tramos = int(dias/15)+1 según PDF punto 4.</span>
+                    <span th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cajero)}">Liquidación generada según fórmula oficial CAJERO: (Sueldo Base + Antigüedad) * <span th:text="${costos != null ? #numbers.formatDecimal(costos.factorFestival * 100, 1, 0) : '50'}">50</span>% * Tramos. Tramos = int(dias/<span th:text="${costos != null ? costos.diasPorTramo : '15'}">15</span>)+1 según PDF punto 4.</span>
+                    <span th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cocinero)}">Liquidación generada según fórmula oficial COCINA: (Sueldo Base + Plus Categoría) * <span th:text="${costos != null ? #numbers.formatDecimal(costos.factorFestival * 100, 1, 0) : '50'}">50</span>% * Tramos. Tramos = int(dias/<span th:text="${costos != null ? costos.diasPorTramo : '15'}">15</span>)+1 según PDF punto 4.</span>
                 </div></div>
                 <div class="col-4"><div class="bg-dark text-white p-3 text-center"><small class="d-block">NETO A COBRAR</small><h3 class="mb-0" th:text="'$ ' + ${#numbers.formatDecimal(sueldo, 1, 2)}">$ 250.000,00</h3></div></div>
             </div>
