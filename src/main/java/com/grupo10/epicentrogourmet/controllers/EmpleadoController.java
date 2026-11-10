@@ -251,18 +251,59 @@ public class EmpleadoController {
         return "redirect:" + ViewRouteHelper.EMPLEADO_ROUTE;
     }
 
+    // === FIX: 1 liquidación por empleado por festival, no por dia ===
     @GetMapping("/liquidar/{id}") @Transactional
-    public String liquidar(@PathVariable Long id, Model model) {
+    public String liquidar(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
         var p = personalRepository.findByIdIncludingInactive(id).orElseThrow();
         validarQueEsDeMiUnidad(p);
         var uv = p.getUnidadAsignada();
         if(uv == null) throw new RuntimeException("Empleado " + id + " sin unidad");
-        if(liquidacionRepository.existsByPersonal_IdAndFechaLiquidacion(id, LocalDate.now())) {
+
+        LocalDate hoy = LocalDate.now();
+        Festival festivalActivo = null;
+        if (uv.getFestivales() != null) {
+            festivalActivo = uv.getFestivales().stream()
+                    .filter(f -> f.getFechaInicio() != null && f.getFechaFin() != null)
+                    .filter(f -> !hoy.isBefore(f.getFechaInicio()) && !hoy.isAfter(f.getFechaFin()))
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        if (festivalActivo != null) {
+            boolean yaLiquidado = liquidacionDeHaberService
+                    .existsByPersonal_IdAndFechaLiquidacionBetween(id, festivalActivo.getFechaInicio(), festivalActivo.getFechaFin());
+            if (yaLiquidado) {
+                redirectAttributes.addFlashAttribute("error",
+                        "¡" + p.getNombre() + " " + p.getApellido() + " ya fue liquidado/a en " + festivalActivo.getNombre()
+                                + "! No se puede liquidar 2 veces el mismo festival.");
+                return "redirect:/empleado/liquidaciones/" + id;
+            }
+        } else {
+            // Fallback: si no hay festival activo, no permitir 2 en el mismo mes
+            LocalDate inicioMes = hoy.withDayOfMonth(1);
+            LocalDate finMes = hoy.withDayOfMonth(hoy.lengthOfMonth());
+            boolean yaLiquidadoEsteMes = liquidacionDeHaberService
+                    .existsByPersonal_IdAndFechaLiquidacionBetween(id, inicioMes, finMes);
+            if (yaLiquidadoEsteMes) {
+                redirectAttributes.addFlashAttribute("error",
+                        "¡" + p.getNombre() + " " + p.getApellido() + " ya fue liquidado/a este mes!");
+                return "redirect:/empleado/liquidaciones/" + id;
+            }
+        }
+
+        // Si pasa la validación, el service vuelve a validar y crea la liquidación
+        // Si el service tira RuntimeException (ya liquidado), lo atrapamos para mostrar el error
+        LiquidacionDeHaber liq;
+        try {
+            liq = liquidacionDeHaberService.liquidar(p.getId(), uv.getId());
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
             return "redirect:/empleado/liquidaciones/" + id;
         }
-        var liq = liquidacionDeHaberService.liquidar(p.getId(), uv.getId());
+
         var costos = costosRepository.findAll().stream().findFirst().orElse(null);
-        int tramos = (liq.getDiasDeTrabajo() / 15) + 1;
+        int diasPorTramo = (costos != null && costos.getDiasPorTramo() != null) ? costos.getDiasPorTramo() : 15;
+        int tramos = (liq.getDiasDeTrabajo() / diasPorTramo) + 1;
 
         model.addAttribute("personal", p);
         model.addAttribute("unidad", uv);
@@ -290,7 +331,8 @@ public class EmpleadoController {
         var p = liq.getPersonal();
         validarQueEsDeMiUnidad(p);
         var costos = costosRepository.findAll().stream().findFirst().orElse(null);
-        int tramos = (liq.getDiasDeTrabajo() / 15) + 1;
+        int diasPorTramo = (costos != null && costos.getDiasPorTramo() != null) ? costos.getDiasPorTramo() : 15;
+        int tramos = (liq.getDiasDeTrabajo() / diasPorTramo) + 1;
 
         model.addAttribute("personal", p);
         model.addAttribute("unidad", liq.getUnidadVenta());

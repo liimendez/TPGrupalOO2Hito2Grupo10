@@ -23,6 +23,10 @@ public interface ILiquidacionDeHaberRepository extends JpaRepository<Liquidacion
 
     boolean existsByPersonal_IdAndFechaLiquidacion(Long personalId, LocalDate fechaLiquidacion);
 
+    // NUEVO - validación 1 liquidación por empleado por festival
+    // Spring Data lo resuelve solo por el nombre: personal.id + fechaLiquidacion BETWEEN desde AND hasta
+    boolean existsByPersonal_IdAndFechaLiquidacionBetween(Long personalId, LocalDate desde, LocalDate hasta);
+
     @Query("SELECT DISTINCT l FROM LiquidacionDeHaber l WHERE l.unidadVenta = :unidadVenta AND l.fechaLiquidacion BETWEEN :inicio AND :fin")
     List<LiquidacionDeHaber> findLiquidacionesParaRentabilidad(@Param("unidadVenta") UnidadVenta unidadVenta, @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
 }

@@ -34,41 +34,39 @@ public class LiquidacionDeHaberService implements ILiquidacionDeHaberService {
     @Override public LiquidacionDeHaber insertOrUpdate(LiquidacionDeHaber l) { return liquidacionRepo.save(l); }
     @Override public boolean remove(Long id) { if(liquidacionRepo.existsById(id)){ liquidacionRepo.deleteById(id); return true;} return false; }
 
+    private Costos getCostos() {
+        return costosRepo.findAll().stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("Cargá tabla costos"));
+    }
 
-// FIX: elige el festival ACTIVO o el de fecha fin más reciente, no uno al azar
+    private Festival getFestivalActivoOUltimo(UnidadVenta uv) {
+        if (uv == null || uv.getFestivales() == null || uv.getFestivales().isEmpty()) return null;
+        LocalDate hoy = LocalDate.now();
+        for (Festival f : uv.getFestivales()) {
+            if (f.getFechaInicio() != null && f.getFechaFin() != null &&
+                    !hoy.isBefore(f.getFechaInicio()) && !hoy.isAfter(f.getFechaFin())) {
+                return f;
+            }
+        }
+        return uv.getFestivales().stream()
+                .filter(f -> f.getFechaFin() != null)
+                .max((a,b) -> a.getFechaFin().compareTo(b.getFechaFin()))
+                .orElse(uv.getFestivales().iterator().next());
+    }
+
+    // FIX: elige el festival ACTIVO o el de fecha fin más reciente, no uno al azar
     private long calcularDiasReales(Personal p, UnidadVenta uv) {
         long dias = 30;
         try {
-            if (uv != null && uv.getFestivales() != null && !uv.getFestivales().isEmpty()) {
-                LocalDate hoy = LocalDate.now();
-                Festival fest = null;
-
-                // 1) Buscar festival activo hoy
-                for (Festival f : uv.getFestivales()) {
-                    if (f.getFechaInicio() != null && f.getFechaFin() != null &&
-                            !hoy.isBefore(f.getFechaInicio()) && !hoy.isAfter(f.getFechaFin())) {
-                        fest = f;
-                        break;
-                    }
+            Festival fest = getFestivalActivoOUltimo(uv);
+            if (fest != null && fest.getFechaInicio() != null && fest.getFechaFin() != null) {
+                LocalDate inicioReal = fest.getFechaInicio();
+                if (p != null && p.getFechaIngreso() != null && p.getFechaIngreso().isAfter(inicioReal)) {
+                    inicioReal = p.getFechaIngreso();
                 }
-                // 2) Si no hay activo, el de fecha fin más lejana (Oktoberfest)
-                if (fest == null) {
-                    fest = uv.getFestivales().stream()
-                            .filter(f -> f.getFechaFin() != null)
-                            .max((a,b) -> a.getFechaFin().compareTo(b.getFechaFin()))
-                            .orElse(uv.getFestivales().iterator().next());
-                }
-
-                if (fest.getFechaInicio() != null && fest.getFechaFin() != null) {
-                    LocalDate inicioReal = fest.getFechaInicio();
-                    if (p != null && p.getFechaIngreso() != null && p.getFechaIngreso().isAfter(inicioReal)) {
-                        inicioReal = p.getFechaIngreso();
-                    }
-                    // +1 para contar ambos extremos inclusive
-                    long diff = ChronoUnit.DAYS.between(inicioReal, fest.getFechaFin()) + 1;
-                    if (diff > 0) dias = diff;
-                    else dias = 1;
-                }
+                long diff = ChronoUnit.DAYS.between(inicioReal, fest.getFechaFin()) + 1;
+                if (diff > 0) dias = diff;
+                else dias = 1;
             }
         } catch (Exception e) {}
         return dias;
@@ -84,39 +82,52 @@ public class LiquidacionDeHaberService implements ILiquidacionDeHaberService {
 
     private double calcularTotalACobrarConDias(Long idPersonal, long dias) {
         Personal p = personalRepo.findById(idPersonal).orElseThrow();
-        Costos costos = costosRepo.findAll().stream().findFirst()
-                .orElseThrow(() -> new RuntimeException("Cargá tabla costos"));
+        Costos costos = getCostos();
 
-        int factor = (int)(dias / 15) + 1;
-        BigDecimal cincuenta = new BigDecimal("0.5");
+        // FIX: todo desde Costos, nada hardcodeado
+        int diasPorTramo = costos.getDiasPorTramo() != null ? costos.getDiasPorTramo() : 15;
+        BigDecimal factorFestival = costos.getFactorFestival() != null ? costos.getFactorFestival() : new BigDecimal("0.5");
+        BigDecimal valorAntiguedad = costos.getValorAntiguedadPorAnio() != null ? costos.getValorAntiguedadPorAnio() : new BigDecimal("5000");
         BigDecimal sueldoBase = costos.getSueldoBase() != null ? costos.getSueldoBase() : new BigDecimal("100000");
+
+        int tramos = (int)(dias / diasPorTramo) + 1;
 
         int anios = 0;
         try { anios = personalService.getAntiguedadAnios(idPersonal); } catch(Exception e){ anios = 0; }
-        BigDecimal antiguedad = BigDecimal.valueOf(anios * 5000L);
+        BigDecimal antiguedad = valorAntiguedad.multiply(BigDecimal.valueOf(anios));
 
         BigDecimal total;
         if (p instanceof Cocinero c) {
             BigDecimal plus = c.getCategoriaCocina() != null ? c.getCategoriaCocina().getPlusFijo() : new BigDecimal("150000");
-            total = new BigDecimal(factor).multiply(cincuenta).multiply(sueldoBase.add(plus));
+            total = new BigDecimal(tramos).multiply(factorFestival).multiply(sueldoBase.add(plus));
         } else {
-            total = new BigDecimal(factor).multiply(cincuenta).multiply(sueldoBase.add(antiguedad));
+            total = new BigDecimal(tramos).multiply(factorFestival).multiply(sueldoBase.add(antiguedad));
         }
         return total.doubleValue();
     }
 
     @Override
     public LiquidacionDeHaber liquidar(Long idPersonal, Long idUnidadVenta) {
-        // === VALIDACIÓN: NO LIQUIDAR 2 VECES EL MISMO DÍA ===
-        if (liquidacionRepo.existsByPersonal_IdAndFechaLiquidacion(idPersonal, LocalDate.now())) {
-            throw new RuntimeException("El empleado ID " + idPersonal + " ya fue liquidado hoy " + LocalDate.now());
-        }
-
         Personal p = personalRepo.findById(idPersonal).orElseThrow();
         UnidadVenta uv = unidadVentaRepo.findById(idUnidadVenta).orElseThrow();
 
-        long dias = calcularDiasReales(p, uv);
+        // === VALIDACIÓN: 1 LIQUIDACIÓN POR EMPLEADO POR FESTIVAL ===
+        Festival fest = getFestivalActivoOUltimo(uv);
+        if (fest != null && fest.getFechaInicio() != null && fest.getFechaFin() != null) {
+            boolean yaLiquidado = liquidacionRepo.existsByPersonal_IdAndFechaLiquidacionBetween(
+                    idPersonal, fest.getFechaInicio(), fest.getFechaFin());
+            if (yaLiquidado) {
+                throw new RuntimeException("El empleado " + p.getNombre() + " " + p.getApellido()
+                        + " ya fue liquidado en " + fest.getNombre() + ". No se puede liquidar 2 veces el mismo festival.");
+            }
+        } else {
+            // Fallback: si no hay festival, no liquidar 2 veces el mismo día
+            if (liquidacionRepo.existsByPersonal_IdAndFechaLiquidacion(idPersonal, LocalDate.now())) {
+                throw new RuntimeException("El empleado ID " + idPersonal + " ya fue liquidado hoy " + LocalDate.now());
+            }
+        }
 
+        long dias = calcularDiasReales(p, uv);
         double total = calcularTotalACobrarConDias(idPersonal, dias);
 
         LiquidacionDeHaber liq = new LiquidacionDeHaber();
@@ -130,6 +141,13 @@ public class LiquidacionDeHaberService implements ILiquidacionDeHaberService {
     }
 
     @Override
+    public boolean existsByPersonal_IdAndFechaLiquidacionBetween(
+            Long personalId, LocalDate desde, LocalDate hasta) {
+        return liquidacionRepo
+                .existsByPersonal_IdAndFechaLiquidacionBetween(personalId, desde, hasta);
+    }
+
+    @Override
     public byte[] generarReciboSueldoPdf(Long liquidacionId) {
         LiquidacionDeHaber liq = liquidacionRepo.findById(liquidacionId)
                 .orElseThrow(() -> new RuntimeException("Liquidación no encontrada ID: " + liquidacionId));
@@ -140,14 +158,17 @@ public class LiquidacionDeHaberService implements ILiquidacionDeHaberService {
         int anios = 0;
         try { anios = personalService.getAntiguedadAnios(p.getId()); } catch(Exception e){ anios = 0; }
         BigDecimal sueldoBase = costos != null && costos.getSueldoBase() != null ? costos.getSueldoBase() : new BigDecimal("100000");
+        BigDecimal valorAntiguedad = costos != null && costos.getValorAntiguedadPorAnio() != null ? costos.getValorAntiguedadPorAnio() : new BigDecimal("5000");
+        BigDecimal factorFestival = costos != null && costos.getFactorFestival() != null ? costos.getFactorFestival() : new BigDecimal("0.5");
+        int diasPorTramo = costos != null && costos.getDiasPorTramo() != null ? costos.getDiasPorTramo() : 15;
         BigDecimal plus = BigDecimal.ZERO;
         String categoriaNombre = "CAJERO";
         if (p instanceof Cocinero c && c.getCategoriaCocina() != null) {
             plus = c.getCategoriaCocina().getPlusFijo() != null ? c.getCategoriaCocina().getPlusFijo() : new BigDecimal("150000");
             categoriaNombre = c.getCategoriaCocina().getNombre();
         }
-        int tramos = (liq.getDiasDeTrabajo() / 15) + 1;
-        BigDecimal antiguedad = BigDecimal.valueOf(anios * 5000L);
+        int tramos = (liq.getDiasDeTrabajo() / diasPorTramo) + 1;
+        BigDecimal antiguedad = valorAntiguedad.multiply(BigDecimal.valueOf(anios));
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4);
@@ -191,7 +212,7 @@ public class LiquidacionDeHaberService implements ILiquidacionDeHaberService {
             tableDetalle.addCell(new Paragraph("$ " + sueldoBase, textoNormal));
 
             tableDetalle.addCell(new Paragraph("1001", textoNormal));
-            tableDetalle.addCell(new Paragraph("Antigüedad (" + anios + " años x $5.000)", textoNormal));
+            tableDetalle.addCell(new Paragraph("Antigüedad (" + anios + " años x $" + valorAntiguedad + ")", textoNormal));
             tableDetalle.addCell(new Paragraph(String.valueOf(anios), textoNormal));
             tableDetalle.addCell(new Paragraph("$ " + antiguedad, textoNormal));
 
@@ -201,17 +222,17 @@ public class LiquidacionDeHaberService implements ILiquidacionDeHaberService {
             tableDetalle.addCell(new Paragraph("$ " + plus, textoNormal));
 
             tableDetalle.addCell(new Paragraph("1003", textoNormal));
-            tableDetalle.addCell(new Paragraph("Factor Festival (50% - PDF punto 4)", textoNormal));
-            tableDetalle.addCell(new Paragraph("0,5", textoNormal));
+            tableDetalle.addCell(new Paragraph("Factor Festival (" + factorFestival.multiply(new BigDecimal("100")) + "% - PDF punto 4)", textoNormal));
+            tableDetalle.addCell(new Paragraph(String.valueOf(factorFestival), textoNormal));
             tableDetalle.addCell(new Paragraph("-", textoNormal));
 
             tableDetalle.addCell(new Paragraph("1004", textoNormal));
-            tableDetalle.addCell(new Paragraph("Tramos Festival = int(" + liq.getDiasDeTrabajo() + "/15)+1", textoNormal));
+            tableDetalle.addCell(new Paragraph("Tramos Festival = int(" + liq.getDiasDeTrabajo() + "/" + diasPorTramo + ")+1", textoNormal));
             tableDetalle.addCell(new Paragraph(String.valueOf(tramos), textoNormal));
             tableDetalle.addCell(new Paragraph("-", textoNormal));
 
             tableDetalle.addCell(new Paragraph("", textoBold));
-            tableDetalle.addCell(new Paragraph("Cálculo: (" + sueldoBase + " + " + antiguedad + " + " + plus + ") * 0,5 * " + tramos, textoBold));
+            tableDetalle.addCell(new Paragraph("Cálculo: (" + sueldoBase + " + " + antiguedad + " + " + plus + ") * " + factorFestival + " * " + tramos, textoBold));
             tableDetalle.addCell(new Paragraph("", textoBold));
             tableDetalle.addCell(new Paragraph("$ " + String.format("%.2f", liq.getTotalACobrar()), textoBold));
 
