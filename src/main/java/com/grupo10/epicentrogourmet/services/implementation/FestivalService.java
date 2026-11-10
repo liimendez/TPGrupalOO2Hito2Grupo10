@@ -40,107 +40,79 @@ public class FestivalService implements IFestivalService {
     @Transactional
     public boolean remove(Long id) {
         if (!festivalRepository.existsById(id)) return false;
-
         Festival festival = festivalRepository.findById(id).orElseThrow();
-
-        // 1. Buscar todas las unidades que están en este festival
         List<UnidadVenta> unidades = unidadVentaRepository.findByFestivalId(id);
-
-        // 2. Sacar el festival de cada unidad para romper la FK
         for (UnidadVenta uv : unidades) {
             if (uv.getFestivales() != null) {
                 uv.getFestivales().removeIf(f -> f.getId().equals(id));
                 unidadVentaRepository.save(uv);
             }
         }
-
-        // 3. Ahora si se puede borrar el festival
         festivalRepository.deleteById(id);
         return true;
     }
 
-    // PUNTO 5 - Recaudación Total
+    // PUNTO 5 - Recaudación Total - FIX: usa subtotal congelado
     @Override
     public ReporteVentaDTO getRecaudacionTotal(Long festivalId) {
         Festival festival = festivalRepository.findById(festivalId).orElseThrow(() -> new RuntimeException("Festival no encontrado"));
         List<Pedido> pedidos = pedidoRepository.findByFestivalId(festivalId);
         double total = pedidos.stream()
                 .mapToDouble(p -> p.getDetalles() == null ? 0 : p.getDetalles().stream()
-                        .mapToDouble(d -> d.getCantidad() * d.getPlato().getPrecioVenta()).sum())
+                        .mapToDouble(d -> d.getSubtotal()).sum())
                 .sum();
         return new ReporteVentaDTO(festival.getId(), festival.getNombre(), total, pedidos.size());
     }
 
-    // PUNTO 6 - Cálculo de Rentabilidad Neta
+    // PUNTO 6 - Cálculo de Rentabilidad Neta - FIX: usa subtotal congelado
     @Override
     public RentabilidadNetaDTO getRentabilidadNeta(Long festivalId, Long unidadVentaId) {
-
         Festival festival = festivalRepository.findById(festivalId).orElseThrow(() -> new RuntimeException("No se encontro el Festival"));
-
         UnidadVenta unidad = unidadVentaRepository.findById(unidadVentaId).orElseThrow(() -> new RuntimeException("No se encontro la UnidadVenta"));
-
         List<Pedido> pedidos = pedidoRepository.findPedidosParaRentabilidad(unidad, festival.getFechaInicio(), festival.getFechaFin());
-
         double gananciaBruta = pedidos.stream()
                 .mapToDouble(p -> p.getDetalles() == null ? 0 : p.getDetalles().stream()
-                        .mapToDouble(d -> d.getCantidad() * (d.getPlato().getPrecioVenta() - d.getPlato().getCostoProduccion()))
+                        .mapToDouble(d -> d.getSubtotal() - (d.getCantidad() * d.getPlato().getCostoProduccion()))
                         .sum())
                 .sum();
-
         List<LiquidacionDeHaber> liquidaciones = liquidacionRepository.findLiquidacionesParaRentabilidad(unidad, festival.getFechaInicio(), festival.getFechaFin());
-
         double totalSueldos = liquidaciones.stream()
                 .mapToDouble(LiquidacionDeHaber::getTotalACobrar)
                 .sum();
-
         double canon = costosService.calcularCanon(unidadVentaId).getTotalCanon().doubleValue();
-
         double rentabilidadNeta = gananciaBruta - totalSueldos - canon;
-
         return new RentabilidadNetaDTO(festivalId, unidadVentaId, gananciaBruta, totalSueldos, canon, rentabilidadNeta);
     }
 
-    // PUNTO 7 - Cálculo de Rentabilidad Neta entre dos fechas
+    // PUNTO 7 - Cálculo de Rentabilidad Neta entre dos fechas - FIX: usa subtotal congelado
     @Override
     public RentabilidadNetaDTO getRentabilidadNetaEntreFechas(Long festivalId, Long unidadVentaId, LocalDate desde, LocalDate hasta) {
-
         Festival festival = festivalRepository.findById(festivalId)
                 .orElseThrow(() -> new RuntimeException("No se encontro el Festival"));
-
         if (desde.isBefore(festival.getFechaInicio()) || hasta.isAfter(festival.getFechaFin()) || desde.isAfter(hasta)) {
             throw new IllegalArgumentException("El rango de fechas debe estar indicado entre el Inicio y el Fin del Festival.");
         }
-
         UnidadVenta unidad = unidadVentaRepository.findById(unidadVentaId)
                 .orElseThrow(() -> new RuntimeException("No se encontro la UnidadVenta"));
-
         List<Pedido> pedidos = pedidoRepository.findPedidosParaRentabilidad(unidad, desde, hasta);
-
         double gananciaBruta = pedidos.stream()
                 .mapToDouble(p -> p.getDetalles() == null ? 0 : p.getDetalles().stream()
-                        .mapToDouble(d -> d.getCantidad() * (d.getPlato().getPrecioVenta() - d.getPlato().getCostoProduccion()))
+                        .mapToDouble(d -> d.getSubtotal() - (d.getCantidad() * d.getPlato().getCostoProduccion()))
                         .sum())
                 .sum();
-
         List<LiquidacionDeHaber> liquidaciones = liquidacionRepository.findLiquidacionesParaRentabilidad(unidad, desde, hasta);
-
         double totalSueldos = liquidaciones.stream()
                 .mapToDouble(LiquidacionDeHaber::getTotalACobrar)
                 .sum();
-
         double canon = costosService.calcularCanon(unidadVentaId).getTotalCanon().doubleValue();
-
         double rentabilidadNeta = gananciaBruta - totalSueldos - canon;
-
         return new RentabilidadNetaDTO(festivalId, unidadVentaId, gananciaBruta, totalSueldos, canon, rentabilidadNeta);
     }
 
     // PUNTO 8 - Plato Estrella
     @Override
     public PlatoDTO getPlatoEstrella(Long festivalId, Long unidadVentaId) {
-
         List<Pedido> pedidos = pedidoRepository.findPedidosPlatoEstrellaPorFestival(festivalId, unidadVentaId);
-
         if (pedidos.isEmpty()) throw new RuntimeException("No hay pedidos para esa unidad en ese festival");
         Map<Long, Long> cantidadPorPlato = new HashMap<>();
         Map<Long, Plato> platoPorId = new HashMap<>();
@@ -157,7 +129,7 @@ public class FestivalService implements IFestivalService {
         return PlatoDTO.builder().id(platoEstrella.getId()).nombre(platoEstrella.getNombre()).precioVenta(platoEstrella.getPrecioVenta()).costoProduccion(platoEstrella.getCostoProduccion()).unidadVentaId(platoEstrella.getUnidadVenta() != null ? platoEstrella.getUnidadVenta().getId() : null).nombreComercialUnidad(platoEstrella.getUnidadVenta() != null ? platoEstrella.getUnidadVenta().getNombreComercial() : null).cantidadVendida(cantidadPorPlato.get(idGanador)).build();
     }
 
-    // PUNTO 3 - Ranking por Recaudación (ADMIN)
+    // PUNTO 3 - Ranking por Recaudación (ADMIN) - FIX: usa subtotal congelado
     @Override
     public List<ReporteVentaDTO> getRankingUnidadesPorRecaudacion(Long festivalId) {
         Festival festival = festivalRepository.findById(festivalId).orElseThrow(() -> new RuntimeException("Festival no encontrado"));
@@ -165,7 +137,7 @@ public class FestivalService implements IFestivalService {
         return unidades.stream()
                 .map(uv -> {
                     List<Pedido> pedidos = pedidoRepository.findByFestivalIdAndUnidadVentaId(festivalId, uv.getId());
-                    double total = pedidos.stream().mapToDouble(p -> p.getDetalles() == null ? 0 : p.getDetalles().stream().mapToDouble(d -> d.getCantidad() * d.getPlato().getPrecioVenta()).sum()).sum();
+                    double total = pedidos.stream().mapToDouble(p -> p.getDetalles() == null ? 0 : p.getDetalles().stream().mapToDouble(d -> d.getSubtotal()).sum()).sum();
                     return new ReporteVentaDTO(festivalId, uv.getNombreComercial() + " - " + festival.getNombre(), total, pedidos.size());
                 })
                 .sorted((a, b) -> Double.compare(b.getRecaudacionTotal(), a.getRecaudacionTotal()))
@@ -188,14 +160,12 @@ public class FestivalService implements IFestivalService {
         return festivalRepository.findByIdWithUnidades(id);
     }
 
-
     // AGREGAR UNIDAD CON VALIDACIONES DE DUPLICADO Y SOLAPAMIENTO
     @Override
     @Transactional
     public void agregarUnidadAFestival(Long festivalId, Long unidadVentaId) {
         Festival festival = festivalRepository.findById(festivalId).orElseThrow(() -> new RuntimeException("Festival no encontrado"));
         UnidadVenta unidad = unidadVentaRepository.findById(unidadVentaId).orElseThrow(() -> new RuntimeException("Unidad no encontrada"));
-
         if (unidad.getFestivales().stream().anyMatch(f -> f.getId().equals(festivalId))) {
             throw new IllegalArgumentException("DUPLICADO: La unidad '" + unidad.getNombreComercial() + "' ya está registrada en este festival");
         }
