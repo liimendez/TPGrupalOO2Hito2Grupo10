@@ -14,7 +14,11 @@ public class Costos {
     private BigDecimal costoMontaje; // $10
     private BigDecimal plusElectricidad; // $2000
     private BigDecimal sueldoBase; // 100.000
-    //private BigDecimal plusCocinero; // 150.000
-    //private BigDecimal plusAyudante; // 100.000
-    //private BigDecimal plusLavaplatos; // 50.000
+
+    private BigDecimal valorAntiguedadPorAnio; // $5000 por año
+    private Integer diasPorTramo; // 15 días = 1 tramo
+    private BigDecimal factorFestival; // 0.5 = 50%
+
+
+
 }
