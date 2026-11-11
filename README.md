@@ -166,7 +166,7 @@ A continuación se detallan los casos de uso adicionales desarrollados por cada 
 | Evaluación de desempeño de empleados | Permite al responsable evaluar a los empleados de su unidad en un festival, mediante criterios de puntualidad, atención al cliente e higiene. | [PR #19](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10/pull/19) |
 | Historial de ventas por día y entre fechas | Permite consultar el historial de ventas de una unidad de venta, por día o dentro de un período determinado. | [PR #20](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10/pull/20) |
 | Reporte de desempeño histórico | Permite al responsable consultar el historial de evaluaciones de un empleado por festival, con promedio general, mejor y peor festival. | [PR #24](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10/pull/24) |
-| Reporte de evolución de recaudación | Permite consultar la evolución diaria de la recaudación de una unidad, con total del período, mejor y peor día y variación entre días. | Pendiente |
+| Reporte de evolución de recaudación | Permite consultar la evolución diaria de la recaudación de una unidad, con total del período, mejor y peor día y variación entre días. | [PR #25](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10/pull/25) |
 
 **Pull Requests:** pendientes de vincular.
 
