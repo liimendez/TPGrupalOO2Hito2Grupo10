@@ -1,8 +1,10 @@
 package com.grupo10.epicentrogourmet.controllers;
 
+import com.grupo10.epicentrogourmet.dtos.CierreCajaDTO;
 import com.grupo10.epicentrogourmet.dtos.ReporteVentaDTO;
 import com.grupo10.epicentrogourmet.entities.*;
 import com.grupo10.epicentrogourmet.repositories.*;
+import com.grupo10.epicentrogourmet.services.IFestivalService;
 import com.grupo10.epicentrogourmet.services.IPedidoService;
 import java.util.Map;
 import org.springframework.security.access.AccessDeniedException;
@@ -25,16 +27,18 @@ public class PedidoController {
     private final IPedidoService pedidoService;
     private final IFestivalRepository festivalRepository;
     private final IPersonalRepository personalRepository;
+    private final IFestivalService festivalService;
 
     public PedidoController(IPedidoRepository pedidoRepository, IPlatoRepository platoRepository, IUnidadVentaRepository unidadVentaRepository,
                             IPedidoService pedidoService, IFestivalRepository festivalRepository,
-                            IPersonalRepository personalRepository) {
+                            IPersonalRepository personalRepository, IFestivalService festivalService) {
         this.pedidoRepository = pedidoRepository;
         this.platoRepository = platoRepository;
         this.unidadVentaRepository = unidadVentaRepository;
         this.pedidoService = pedidoService;
         this.festivalRepository = festivalRepository;
         this.personalRepository = personalRepository;
+        this.festivalService = festivalService;
     }
 
     @PreAuthorize("hasAnyAuthority('EMPLEADO','ROLE_EMPLEADO')")
@@ -218,5 +222,22 @@ public class PedidoController {
         }
         pedidoRepository.save(pedido);
         return "redirect:/pedido/unidad/" + unidadVentaId + "?success";
+    }
+
+    @GetMapping("/cajero/cierre-caja")
+    @PreAuthorize("hasAnyAuthority('EMPLEADO', 'ROLE_EMPLEADO')")
+    @Transactional(readOnly = true)
+    public ModelAndView verCierreCaja() {
+        String correo = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        ModelAndView mav = new ModelAndView("pedido/cierre-caja");
+        try {
+            CierreCajaDTO cierre = festivalService.getCierreCajaDiario(correo);
+            mav.addObject("cierre", cierre);
+        } catch (RuntimeException e) {
+            mav.addObject("error", e.getMessage());
+        }
+
+        return mav;
     }
 }

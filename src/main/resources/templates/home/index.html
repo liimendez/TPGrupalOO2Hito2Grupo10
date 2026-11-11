@@ -49,6 +49,7 @@
             <div class="d-flex gap-2">
                 <a th:href="@{'/unidad-venta/' + ${miUnidad.id}}" class="btn btn-warning rounded-pill fw-bold text-dark px-4"><i class="bi bi-shop"></i> Ver Carta y Pedir</a>
                 <a th:href="@{'/pedido/unidad/' + ${miUnidad.id}}" class="btn btn-outline-warning rounded-pill fw-bold px-4"><i class="bi bi-receipt"></i> Mis Pedidos </a>
+                <a th:href="@{/pedido/cajero/cierre-caja}" class="btn btn-outline-success rounded-pill fw-bold px-3"><i class="bi bi-cash-stack"></i> Cierre de Caja</a>
             </div>
         </div>
     </div>

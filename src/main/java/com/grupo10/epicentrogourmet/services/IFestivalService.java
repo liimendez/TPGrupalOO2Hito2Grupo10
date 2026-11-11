@@ -4,10 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import com.grupo10.epicentrogourmet.dtos.PlatoDTO;
-import com.grupo10.epicentrogourmet.dtos.RentabilidadNetaDTO;
-import com.grupo10.epicentrogourmet.dtos.ReporteMayoresCanonDTO;
-import com.grupo10.epicentrogourmet.dtos.ReporteVentaDTO;
+import com.grupo10.epicentrogourmet.dtos.*;
 import com.grupo10.epicentrogourmet.entities.Festival;
 
 public interface IFestivalService {
@@ -27,4 +24,6 @@ public interface IFestivalService {
     Optional<Festival> findByIdWithUnidades(Long id);
 
     Map<String, Object> getEstadoActualEmpleado(String correo);
+
+    CierreCajaDTO getCierreCajaDiario(String correoCajero);
 }

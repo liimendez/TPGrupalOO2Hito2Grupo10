@@ -6,20 +6,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import com.grupo10.epicentrogourmet.dtos.PlatoDTO;
-import com.grupo10.epicentrogourmet.dtos.ReporteMayoresCanonDTO;
+import com.grupo10.epicentrogourmet.dtos.*;
 import com.grupo10.epicentrogourmet.entities.*;
+import com.grupo10.epicentrogourmet.repositories.*;
 import com.grupo10.epicentrogourmet.services.ICostosService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.grupo10.epicentrogourmet.dtos.ReporteVentaDTO;
-import com.grupo10.epicentrogourmet.dtos.RentabilidadNetaDTO;
-import com.grupo10.epicentrogourmet.repositories.IFestivalRepository;
-import com.grupo10.epicentrogourmet.repositories.ILiquidacionDeHaberRepository;
-import com.grupo10.epicentrogourmet.repositories.IPedidoRepository;
-import com.grupo10.epicentrogourmet.repositories.IUnidadVentaRepository;
 import com.grupo10.epicentrogourmet.services.IFestivalService;
 import com.grupo10.epicentrogourmet.services.IUnidadVentaService;
 
@@ -32,6 +26,7 @@ public class FestivalService implements IFestivalService {
     @Autowired private IUnidadVentaRepository unidadVentaRepository;
     @Autowired private IUnidadVentaService unidadVentaService;
     @Autowired private ICostosService costosService;
+    @Autowired private IPersonalRepository personalRepository;
 
     @Override public List<Festival> getAll() { return festivalRepository.findAll(); }
     @Override public Optional<Festival> findById(Long id) { return festivalRepository.findById(id); }
@@ -204,5 +199,35 @@ public class FestivalService implements IFestivalService {
         resultado.put("unidad", unidad);
         resultado.put("festival", festivalActivo);
         return resultado;
+    }
+
+    public CierreCajaDTO getCierreCajaDiario(String correoCajero) {
+        Personal personal = personalRepository.findByCredencialesCorreo(correoCajero)
+                .orElseThrow(() -> new RuntimeException("No se encontro al Cajero"));
+
+        UnidadVenta unidad = personal.getUnidadAsignada();
+        if (unidad == null) {
+            throw new RuntimeException("El cajero no tiene una unidad de venta asignada");
+        }
+
+        LocalDate hoy = LocalDate.now();
+
+        List<Pedido> pedidosHoy = pedidoRepository.findAll().stream()
+                .filter(p -> p.getUnidadVenta() != null && p.getUnidadVenta().getId().equals(unidad.getId()))
+                .filter(p -> p.getFechaPedido() != null && p.getFechaPedido().isEqual(hoy))
+                .toList();
+
+        double totalRecaudado = pedidosHoy.stream()
+                .mapToDouble(p -> p.getDetalles() == null ? 0 : p.getDetalles().stream()
+                        .mapToDouble(d -> d.getSubtotal()).sum())
+                .sum();
+
+        return CierreCajaDTO.builder()
+                .fecha(hoy)
+                .nombreUnidad(unidad.getNombreComercial())
+                .nombreCajero(personal.getNombre() + " " + personal.getApellido())
+                .totalRecaudado(totalRecaudado)
+                .cantidadPedidos(pedidosHoy.size())
+                .build();
     }
 }
