@@ -1,10 +1,13 @@
 package com.grupo10.epicentrogourmet.controllers;
 
 import com.grupo10.epicentrogourmet.dtos.EvolucionRecaudacionDTO;
+import com.grupo10.epicentrogourmet.entities.UnidadVenta;
 import com.grupo10.epicentrogourmet.repositories.IFestivalRepository;
 import com.grupo10.epicentrogourmet.repositories.IUnidadVentaRepository;
 import com.grupo10.epicentrogourmet.services.implementation.EvolucionRecaudacionService;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +19,7 @@ import java.util.List;
 
 @Controller
 @RequestMapping("/responsable")
+@PreAuthorize("hasRole('RESPONSABLE')")
 public class EvolucionRecaudacionController {
 
     private final EvolucionRecaudacionService evolucionService;
@@ -36,7 +40,14 @@ public class EvolucionRecaudacionController {
             @RequestParam(required = false) Long festivalId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            Authentication auth,
             Model model) {
+
+        String correo = auth.getName();
+        UnidadVenta unidad = unidadVentaRepository.findById(unidadVentaId).orElse(null);
+        if (unidad == null || unidad.getResponsable() == null || !correo.equals(unidad.getResponsable().getCorreo())) {
+            return "redirect:/responsable/unidades?error=no-autorizado";
+        }
 
         List<EvolucionRecaudacionDTO> evolucion = evolucionService.getEvolucion(festivalId, unidadVentaId, desde, hasta);
 
@@ -44,8 +55,7 @@ public class EvolucionRecaudacionController {
         EvolucionRecaudacionDTO mejor = evolucion.stream().max(Comparator.comparingDouble(EvolucionRecaudacionDTO::getTotalDia)).orElse(null);
         EvolucionRecaudacionDTO peor = evolucion.stream().min(Comparator.comparingDouble(EvolucionRecaudacionDTO::getTotalDia)).orElse(null);
 
-        String nombreUnidad = unidadVentaRepository.findById(unidadVentaId)
-                .map(u -> u.getNombreComercial()).orElse("");
+        String nombreUnidad = unidad.getNombreComercial();
         String nombreFestival = "";
         if (festivalId != null) {
             nombreFestival = festivalRepository.findById(festivalId)
