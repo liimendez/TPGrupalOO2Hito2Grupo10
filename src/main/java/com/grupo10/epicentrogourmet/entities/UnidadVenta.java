@@ -29,6 +29,7 @@ public abstract class UnidadVenta {
 			joinColumns = @JoinColumn(name = "unidad_venta_id"),
 			inverseJoinColumns = @JoinColumn(name = "festival_id")
 	)
+	@OrderBy("nombre ASC")
 	private Set<Festival> festivales = new HashSet<>();
 
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -36,6 +37,7 @@ public abstract class UnidadVenta {
 	private Usuario responsable;
 
 	@OneToMany(mappedBy = "unidadAsignada", fetch = FetchType.LAZY)
+	@OrderBy("id ASC")
 	private Set<Personal> staff = new HashSet<>();
 
 	@OneToMany(mappedBy = "unidadVenta")
@@ -43,6 +45,7 @@ public abstract class UnidadVenta {
 	private Set<Plato> platosOfrecidos;
 
 	@OneToMany(mappedBy = "unidadVenta", fetch = FetchType.LAZY)
+	@OrderBy("id ASC")
 	private Set<Pedido> pedidos = new HashSet<>();
 
 	@CreationTimestamp
