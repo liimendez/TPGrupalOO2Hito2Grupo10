@@ -47,6 +47,9 @@
 
 <div class="container py-5" style="max-width:1200px">
     <h3 class="titulo">Mi Unidad de Venta</h3>
+    <div th:if="${param.error != null && param.error[0] == 'no-autorizado'}" class="alert alert-danger text-center fw-bold" style="max-width:600px;margin:0 auto 20px auto;">
+        ⚠️ No tenés permiso para ver la evolución de otra unidad.
+    </div>
     <p class="subtitulo small mb-4"><i class="bi bi-lightning-charge-fill me-1"></i> Unidad asignada a tu usuario</p>
 
     <div class="row g-4 justify-content-center">
