@@ -42,7 +42,7 @@
 
 <div class="container py-5" style="max-width:900px">
     <h3 class="titulo">📈 Evolución de Recaudación</h3>
-    <p class="subtitulo small mb-4" th:text="${nombreUnidad} + ' - ' + ${nombreFestival}">mc donald - Carnaval de Sabores</p>
+    <p class="subtitulo small mb-4" th:text="${nombreUnidad} + ' - ' + ${nombreFestival}"></p>
 
     <div class="card-eg">
         <form method="get" class="row g-3 align-items-end mb-4">
@@ -67,16 +67,16 @@
         </div>
 
         <div class="d-flex gap-2 mb-4" th:if="${!evolucion.isEmpty()}">
-            <div class="dato"><small>Total General</small><b th:text="'$' + ${#numbers.formatDecimal(total, 1, 2)}">$80000,00</b></div>
-            <div class="dato"><small>Mejor Día</small><b th:text="${#temporals.format(mejor.fecha, 'dd/MM/yyyy')} + ' - $' + ${#numbers.formatDecimal(mejor.totalDia, 1, 2)}">01/12/2025 - $80000</b></div>
-            <div class="dato"><small>Peor Día</small><b th:text="${#temporals.format(peor.fecha, 'dd/MM/yyyy')} + ' - $' + ${#numbers.formatDecimal(peor.totalDia, 1, 2)}">01/12/2025 - $80000</b></div>
+            <div class="dato"><small>Total General</small><b th:text="'$' + ${#numbers.formatDecimal(total, 1, 2)}"></b></div>
+            <div class="dato"><small>Mejor Día</small><b th:text="${#temporals.format(mejor.fecha, 'dd/MM/yyyy')} + ' - $' + ${#numbers.formatDecimal(mejor.totalDia, 1, 2)}"></b></div>
+            <div class="dato"><small>Peor Día</small><b th:text="${#temporals.format(peor.fecha, 'dd/MM/yyyy')} + ' - $' + ${#numbers.formatDecimal(peor.totalDia, 1, 2)}"></b></div>
         </div>
 
         <div class="grafico" th:if="${!evolucion.isEmpty()}">
             <div class="barra-wrap" th:each="dia : ${evolucion}">
-                <div class="barra-valor" th:text="'$' + ${#numbers.formatDecimal(dia.totalDia, 1, 0)}">$115000</div>
+                <div class="barra-valor" th:text="'$' + ${#numbers.formatDecimal(dia.totalDia, 1, 0)}"></div>
                 <div class="barra" th:style="'height: ' + (${dia.totalDia} / ${mejor.totalDia} * 180) + 'px'"></div>
-                <div class="barra-fecha" th:text="${#temporals.format(dia.fecha, 'dd/MM')}">05/11</div>
+                <div class="barra-fecha" th:text="${#temporals.format(dia.fecha, 'dd/MM')}"></div>
             </div>
         </div>
 
@@ -88,9 +88,9 @@
             </thead>
             <tbody>
             <tr th:each="dia : ${evolucion}">
-                <td class="fw-bold" th:text="${#temporals.format(dia.fecha, 'dd/MM/yyyy')}">01/12/2025</td>
-                <td th:text="${dia.cantidadPedidos} + ' pedidos'">1 pedidos</td>
-                <td class="text-end fw-bold" th:text="'$' + ${#numbers.formatDecimal(dia.totalDia, 1, 2)}">$80000,00</td>
+                <td class="fw-bold" th:text="${#temporals.format(dia.fecha, 'dd/MM/yyyy')}"></td>
+                <td th:text="${dia.cantidadPedidos} + ' pedidos'"></td>
+                <td class="text-end fw-bold" th:text="'$' + ${#numbers.formatDecimal(dia.totalDia, 1, 2)}"></td>
                 <td class="text-end">
                     <span th:if="${dia.variacion == null}">—</span>
                     <span th:if="${dia.variacion != null}" th:text="'$' + ${#numbers.formatDecimal(dia.variacion, 1, 2)}" th:class="${dia.variacion >= 0} ? 'text-success fw-bold' : 'text-danger fw-bold'"></span>
