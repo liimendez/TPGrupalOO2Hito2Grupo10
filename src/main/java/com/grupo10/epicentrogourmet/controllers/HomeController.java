@@ -18,6 +18,8 @@ import com.grupo10.epicentrogourmet.repositories.IUnidadVentaRepository;
 import com.grupo10.epicentrogourmet.services.IFestivalService;
 import com.grupo10.epicentrogourmet.services.IUnidadVentaService;
 
+import java.util.Map;
+
 @Controller
 @RequestMapping("/")
 public class HomeController {
@@ -68,6 +70,13 @@ public class HomeController {
                     unidadVentaRepository.findUnidadByEmpleadoCorreo(correo).ifPresent(uv -> {
                         modelAndView.addObject("miUnidad", uv);
                     });
+                }
+
+                try {
+                    Map<String, Object> estadoEmpleado = festivalService.getEstadoActualEmpleado(correo);
+                    modelAndView.addObject("estadoEmpleado", estadoEmpleado);
+                } catch (Exception e) {
+                    // Se ignora intencionalmente para que los roles que no sean EMPLEADO carguen el index sin errores
                 }
             }
         }

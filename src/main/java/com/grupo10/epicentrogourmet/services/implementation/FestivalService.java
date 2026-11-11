@@ -182,4 +182,27 @@ public class FestivalService implements IFestivalService {
         if (inicio1 == null || fin1 == null || inicio2 == null || fin2 == null) return false;
         return !fin1.isBefore(inicio2) && !fin2.isBefore(inicio1);
     }
+
+    @Override
+    public Map<String, Object> getEstadoActualEmpleado(String correo) {
+        UnidadVenta unidad = unidadVentaRepository.findUnidadConFestivalesByEmpleadoCorreo(correo)
+                .orElse(null);
+
+        Festival festivalActivo = null;
+        LocalDate hoy = LocalDate.now();
+
+        if (unidad != null) {
+            for (Festival f : unidad.getFestivales()) {
+                if (!hoy.isBefore(f.getFechaInicio()) && !hoy.isAfter(f.getFechaFin())) {
+                    festivalActivo = f;
+                    break;
+                }
+            }
+        }
+
+        Map<String, Object> resultado = new HashMap<>();
+        resultado.put("unidad", unidad);
+        resultado.put("festival", festivalActivo);
+        return resultado;
+    }
 }
