@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Evaluar Desempeño - [[${festival.nombre}]]</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; background: #fdf6ec; }
+        .card { background: white; padding: 20px; border-radius: 10px; max-width: 700px; margin: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        h1 { color: #8b4513; }
+        label { display: block; margin-top: 12px; font-weight: bold; }
+        select, textarea { width: 100%; padding: 8px; margin-top: 4px; border-radius: 6px; border: 1px solid #ccc; }
+        button { margin-top: 18px; padding: 10px 20px; background: #8b4513; color: white; border: none; border-radius: 6px; cursor: pointer; }
+        button:hover { background: #a0522d; }
+        .exito { background: #d4edda; color: #155724; padding: 10px; border-radius: 6px; }
+        .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 6px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background: #8b4513; color: white; }
+        .destacado { background: #fff3cd; font-weight: bold; }
+        .observacion { background: #f8d7da; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>⭐ Evaluar Desempeño</h1>
+    <h2 th:text="'Festival: ' + ${festival.nombre}"></h2>
+
+    <div th:if="${exito}" class="exito" th:text="${exito}"></div>
+    <div th:if="${error}" class="error" th:text="${error}"></div>
+
+    <form th:action="@{/responsable/evaluar/guardar}" method="post" th:object="${evaluacion}">
+        <input type="hidden" name="festivalId" th:value="${festival.id}">
+
+        <label>Empleado a evaluar:</label>
+        <select name="personalId" required>
+            <option value="">-- Seleccionar empleado --</option>
+            <option th:each="emp : ${empleados}"
+                    th:value="${emp.id}"
+                    th:text="${emp.nombre + ' ' + emp.apellido + ' - ' + emp.unidadAsignada.nombreComercial}"
+            </option>
+        </select>
+
+        <label>Puntualidad (1 a 5):</label>
+        <select th:field="*{puntualidad}" required>
+            <option value="">-- --</option>
+            <option value="1">1 ⭐</option>
+            <option value="2">2 ⭐⭐</option>
+            <option value="3">3 ⭐⭐⭐</option>
+            <option value="4">4 ⭐⭐⭐⭐</option>
+            <option value="5">5 ⭐⭐⭐⭐⭐</option>
+        </select>
+
+        <label>Atención al Cliente (1 a 5):</label>
+        <select th:field="*{atencionCliente}" required>
+            <option value="">-- --</option>
+            <option value="1">1 ⭐</option>
+            <option value="2">2 ⭐⭐</option>
+            <option value="3">3 ⭐⭐⭐</option>
+            <option value="4">4 ⭐⭐⭐⭐</option>
+            <option value="5">5 ⭐⭐⭐⭐⭐</option>
+        </select>
+
+        <label>Higiene / Presentación (1 a 5):</label>
+        <select th:field="*{higienePresentacion}" required>
+            <option value="">-- --</option>
+            <option value="1">1 ⭐</option>
+            <option value="2">2 ⭐⭐</option>
+            <option value="3">3 ⭐⭐⭐</option>
+            <option value="4">4 ⭐⭐⭐⭐</option>
+            <option value="5">5 ⭐⭐⭐⭐⭐</option>
+        </select>
+
+        <label>Observación (opcional):</label>
+        <textarea th:field="*{observacion}" rows="3" placeholder="Ej: Muy buena atención, llegó a horario..."></textarea>
+
+        <button type="submit">Guardar Evaluación</button>
+    </form>
+
+    <h3>Evaluaciones ya realizadas en este festival</h3>
+    <table th:if="${!evaluaciones.isEmpty()}">
+        <tr>
+            <th>Empleado</th>
+            <th>Punt.</th>
+            <th>Atenc.</th>
+            <th>Higiene</th>
+            <th>Promedio</th>
+            <th>Resultado</th>
+        </tr>
+        <tr th:each="e : ${evaluaciones}"
+            th:class="${e.promedio >= umbralDestacado} ? 'destacado' : (${e.promedio < umbralObservacion} ? 'observacion' : '')">
+            <td th:text="${e.evaluado.nombre + ' ' + e.evaluado.apellido}"></td>
+            <td th:text="${e.puntualidad}"></td>
+            <td th:text="${e.atencionCliente}"></td>
+            <td th:text="${e.higienePresentacion}"></td>
+            <td th:text="${#numbers.formatDecimal(e.promedio, 1, 2)}"></td>
+            <td th:text="${e.promedio >= umbralDestacado} ? 'DESTACADO ⭐ + Plus $' + ${plusDestacado} : (${e.promedio < umbralObservacion} ? 'EN OBSERVACIÓN ⚠️' : 'SATISFACTORIO')"></td>
+        </tr>
+    </table>
+    <p th:if="${evaluaciones.isEmpty()}">Todavía no hay evaluaciones en este festival.</p>
+
+    <p style="margin-top: 15px;"><a href="/responsable/unidades">← Volver a Mis Unidades</a></p>
+</div>
+</body>
+</html>
