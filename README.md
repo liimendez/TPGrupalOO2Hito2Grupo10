@@ -1,158 +1,196 @@
-﻿Hito 2 - TP Epicentro Gourmet - Grupo 10
-👩‍💻 Integrante del equipo 10: Livia Mendez - feature/LiiMendez
+﻿# 🍽️ Epicentro Gourmet
+### Sistema de Gestión de Festivales Gastronómicos
 
-🚀 Cómo levantar el proyecto
-1. Requisitos previos
+![Java](https://img.shields.io/badge/Java-17-orange?logo=openjdk)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen?logo=springboot)
+![MySQL](https://img.shields.io/badge/MySQL-Database-blue?logo=mysql)
+![Maven](https://img.shields.io/badge/Maven-Build-red?logo=apachemaven)
+![Status](https://img.shields.io/badge/Proyecto-Hito%202-purple)
 
-   Java 17
-   Maven (mvnw incluido)
-   MySQL 8
-   Git
+Aplicación web desarrollada para la gestión integral de **Epicentro Gourmet**, un centro de convenciones y predio ferial que organiza festivales gastronómicos temáticos.
 
-2. Clonar repositorio
+El sistema permite administrar festivales, unidades de venta, empleados, platos, pedidos y generar reportes para analizar el rendimiento económico de los eventos.
 
-git clone https://github.com/liimendez/TPGrupalOO2Hito2Grupo10.git
-cd TPGrupalOO2Hito2Grupo10
-git checkout main
-git pull origin main
+---
 
-3. Configurar Base de Datos
+## 👥 Equipo 10
 
-Crear una BD en MySQL:
+| Integrante | Usuario de GitHub |
+|---|---|
+| Livia Méndez | [@liimendez](https://github.com/liimendez) |
+| Santiago Sosa | [@santisosa-gh](https://github.com/santisosa-gh) |
 
+---
+
+## 📌 Descripción del sistema
+
+Epicentro Gourmet es un sistema de gestión desarrollado para facilitar la administración de festivales gastronómicos y sus respectivas unidades de venta.
+
+La aplicación contempla distintos roles de usuario, cada uno con funcionalidades específicas:
+
+- **Administrador:** consulta festivales, unidades de venta, rankings de recaudación y reportes de mayores cánones.
+- **Responsable:** administra empleados y platos, consulta información de su unidad de venta y genera reportes de recaudación y rentabilidad.
+- **Empleado:** consulta su información laboral, festivales en los que trabajó, haberes y unidad de trabajo actual.
+- **Cajero:** cuenta con la funcionalidad de cierre de caja diario.
+
+También permite registrar pedidos, calcular costos, liquidar haberes y analizar la rentabilidad de las unidades de venta.
+
+---
+
+## 🛠️ Tecnologías utilizadas
+
+- Java 17
+- Spring Boot
+- Spring Data JPA / Hibernate
+- Spring Security
+- Maven
+- MySQL
+- Thymeleaf
+- Git y GitHub
+
+---
+
+## 🚀 Cómo levantar el proyecto
+
+### 1. Requisitos previos
+
+Antes de ejecutar la aplicación, es necesario contar con:
+
+- Java JDK 17.
+- MySQL instalado y funcionando.
+- IntelliJ IDEA, Eclipse o Visual Studio Code.
+- Maven (o utilizar el Maven Wrapper incluido en el proyecto).
+- Git.
+
+### 2. Clonar el repositorio
+
+```bash
+git clone [URL_DEL_REPOSITORIO](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10)
+```
+
+Ingresar a la carpeta del proyecto:
+
+```bash
+cd NOMBRE_DEL_PROYECTO
+```
+
+### 3. Crear la base de datos
+
+Desde MySQL ejecutar:
+
+```sql
 CREATE DATABASE epicentro_gourmet;
 
-Configurar src/main/resources/application.yml:
+copiar la bd del proyecto que incluye datos ya precargados
+en la mayoria de usuarios la password es admin o password 
 
-spring:
-datasource:
-url: jdbc:mysql://localhost:3306/epicentro_gourmet
-username: root
-password: TU_PASSWORD
-jpa:
-hibernate:
-ddl-auto: update
-show-sql: true
+```
 
-4. Cargar datos de prueba
+### 4. Configurar las variables de entorno
 
-El proyecto incluye script de carga con:
+El proyecto utiliza variables de entorno para mantener separadas las credenciales y la configuración de conexión a la base de datos del código fuente.
 
-    Tabla costos: $100.000 sueldo_base, $150.000 cocinero, $100.000 ayudante, $50.000 lavaplatos, $500 área, $10 montaje, $2000 fijo foodtruck
-    Festivales, unidades, empleados y pedidos de prueba
-    Se ejecuta automático al iniciar o vía data.sql
+En la raíz del proyecto se encuentra:
 
-5. Levantar la app
+- **`.env`**: archivo local que contiene las variables de entorno reales para ejecutar la aplicación. No debe subirse al repositorio.
+- **`.env.example`**: archivo de ejemplo que contiene las mismas variables, pero con valores ficticios. Sirve como plantilla para que cada integrante pueda configurar su propio entorno.
 
-./mvnw spring-boot:run
-# o
+Para comenzar, copiar el archivo de ejemplo y crear el archivo local:
+
+```bash
+cp .env.example .env
+```
+
+En Windows también se puede realizar esta copia manualmente.
+
+Completar el archivo `.env` con los datos correspondientes a la instalación local de MySQL.
+
+**Ejemplo de configuración (`.env.example`):**
+
+```env
+
+DB_URL=jdbc:mysql://localhost:3306/epicentro_gourmet?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&zeroDateTimeBehavior=convertToNull
+USERNAME=root
+PASSWORD=TU_CLAVE
+MAIL_USERNAME=TU_CORREO
+MAIL_PASSWORD=TU_CLAVE_DE_APLICACION
+
+```
+
+> ⚠️ Los valores del archivo `.env.example` son ficticios y deben reemplazarse por las credenciales correspondientes a cada entorno.
+
+**Importante:** Spring Boot no carga automáticamente los archivos `.env` por defecto. Las variables deben estar disponibles en el entorno de ejecución de IntelliJ IDEA o mediante el mecanismo de carga de variables configurado en el proyecto.
+
+### 5. Ejecutar la aplicación
+
+Desde la terminal, ubicada en la carpeta raíz del proyecto:
+
+Con Maven:
+
+```bash
 mvn spring-boot:run
+```
 
-Abrir en el navegador:
+O utilizando Maven Wrapper:
 
+```bash
+./mvnw spring-boot:run
+```
+
+En Windows:
+
+```bash
+mvnw.cmd spring-boot:run
+```
+
+También es posible ejecutar la clase principal de Spring Boot desde IntelliJ IDEA.
+
+### 6. Acceder al sistema
+
+Una vez iniciada la aplicación, abrir el navegador en:
+
+```text
 http://localhost:8080
+```
 
-6. Usuarios de prueba
+---
 
-   Admin: admin / admin (ve ranking y mayor canon)
-   Responsable: responsable / 1234 (ve liquidación, cálculo canon)
-   Unidad de venta: unidad / 1234
+## 📋 Casos de uso implementados
 
-7. Endpoints clave para pre-defensa
+A continuación se detallan los casos de uso adicionales desarrollados por cada integrante.
 
-   Ranking: /festival/{id}/ranking -> valida $105.000
-   Mayor Canon: /festival/{id}/mayor-canon?x=3 -> valida $8.000 MC 8679004
-   Liquidación: /empleados/{id}/liquidar -> valida $225k (38 días lavaplatos) y $230k (52 días cajero 3 años)
-   Email: se dispara al dar alta empleado
+### 👩‍💻 Livia Méndez — @liimendez
 
-8. Verificar que todo funciona
+| Caso de uso | Descripción |
+|---|---|
+| Evaluación de desempeño de empleados | Permite evaluar el desempeño del personal a partir de información relacionada con su actividad laboral. |
+| Historial de ventas por día y entre fechas | Permite consultar el historial de ventas de una unidad de venta, tanto para un día específico como para un período determinado. |
 
-   Login como Admin -> Festival -> Ranking
-   Login como Admin -> Festival -> Mayor Canon (probar x=3)
-   Login como Responsable -> Empleados -> Liquidar -> ver fórmula oficial
+**Pull Requests:** pendientes de vincular.
 
-CATEGORÍA: ADMINISTRADOR
-3. Ranking de Unidades
+### 👨‍💻 Santiago Sosa — @santisosa-gh
 
-Para un Festival, genera una lista ordenada descendente por recaudación.
+*Casos de uso pendientes de completar.*
 
-    Endpoint: GET /festival/{id}/ranking
-    Service: FestivalService.getRankingByRecaudacion()
-    Template: festival/ranking.html
-    Validación: MC Donald's $105.000 con 3 pedidos - orden descendente OK
+---
 
-4. Unidades con Mayor Canon
+## 📐 Documentación del proyecto
 
-Dado un festival devuelve las "x" unidades que más gastaron en canon indicando nombre comercial, código, tipo y canon.
+- 📊 **Diagrama de clases:** [Ver diagrama de clases (PDF)](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10/blob/main/diagrama.drawio.pdf)
+- 💻 **Repositorio GitHub:** [TPGrupalOO2Hito2Grupo10](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10)
 
-    Endpoint: GET /festival/{id}/mayor-canon?x=3
-    DTO: ReporteMayoresCanonDTO (DetalleCanonDTO)
-    Service: FestivalService.getUnidadesMayorCanon()
-    Validación: MC Donald's MC 8679004 - $8.000 - top 3 con param x=3 OK
+## 🌿 Metodología de trabajo
 
-CATEGORÍA: RESPONSABLE
-1. Altas, Bajas y Modificaciones
+El desarrollo se organiza mediante Git y GitHub.
 
-Métodos para agregar, modificar y eliminar empleados con baja lógica.
+Cada funcionalidad se trabaja en una rama independiente y posteriormente se incorpora a `main` mediante Pull Requests.
 
-    Eliminación lógica con eliminado boolean
-    Email automático al dar de alta
+Se busca mantener un desarrollo organizado, facilitar la revisión del código y permitir el trabajo colaborativo entre los integrantes.
 
-3. Cálculo de Canon
+---
 
-Método que devuelve el monto a pagar por cada unidad:
+**Universidad Nacional de Lanús (UNLa)**  
+Licenciatura en Sistemas – Orientación a Objetos II  
+Trabajo Práctico Grupal 2026 – Hito 2
 
-    Food Truck: (areaSup * $500) + $2000 + requiere conexión eléctrica
-    Puesto: (areaSup * $500) - (Tiempo Montaje * $10)
-    Tabla costos: costos - sueldo_base $100.000 / area $500 / montaje $10 / fijo_foodtruck $2000
-
-4. Liquidación de Haberes: Fórmula OFICIAL PDF
-
-Calcular el sueldo del personal según su tipo:
-
-Datos base:
-
-    Sueldo Base: $100.000
-    Plus: Cocinero $150.000 / Ayudante $100.000 / Lavaplatos $50.000
-    Antigüedad: $5.000 x año
-    Cajero: Sueldo Base + antigüedad
-
-Tabla oficial días:
-
-    Hasta 15 días: 50% (sueldo base + plus)
-    De 16 a 30 días: 100%
-    Más de 30 días: suma proporcional
-
-Fórmula implementada:
-
-(1) totalACobrarCocina = (int(diasDurFest/15)+1) * 50% * (sueldoBase+plusCategoria)
-Ej: festival 38 días, rol lavaplatos
-totalACobrarCocinero = (int(38/15)+1) * 50% * ($100.000+$50.000) = $225.000
-(2) totalACobrarCajero = (int(diasDurFest/15)+1) * 50% * (sueldoBase+antigüedad)
-Ej: festival 52 días, 3 años antigüedad
-totalACobrarCajero = (int(52/15)+1) * 50% * ($100.000+$5.000*3) = $230.000
-
-    Service: LiquidacionDeHaberService.java
-    Templates: empleados/liquidacion.html / historialLiquidaciones.html / listaEmpleado.html
-
-CATEGORÍA: PRE-DEFENSA CHECKLIST
-
-    ✅ 4. Alta pedido
-    ✅ 5. Script de carga de datos prueba en la BD (tabla costos y datos festival)
-    ✅ 6. Vista básica con liquidación de sueldo
-    ✅ 8. Prueba de envío de e-mail (EmailService)
-
-Stack
-
-    Java 17 / Spring Boot / Thymeleaf
-    MySQL / JPA / Maven
-    Estilo templates: gris, amarillo, negro (responsable/unidades)
-
-Commits LiiMendez
-
-    c7124d6 - fix: liquidacion haberes formula oficial PDF (225k/230k) + ranking mayor canon
-    4263129 - feat: fix liquidacion oficial 225k/230k + ranking mayor-canon + templates finales
-
-Grupo 10 - OO2 - UNLa 
-
-/////////
+**Equipo 10 | Epicentro Gourmet** 🍽️
