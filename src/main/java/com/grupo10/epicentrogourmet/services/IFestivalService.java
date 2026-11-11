@@ -1,6 +1,7 @@
 package com.grupo10.epicentrogourmet.services;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import com.grupo10.epicentrogourmet.dtos.PlatoDTO;
@@ -25,5 +26,5 @@ public interface IFestivalService {
 
     Optional<Festival> findByIdWithUnidades(Long id);
 
-
+    Map<String, Object> getEstadoActualEmpleado(String correo);
 }

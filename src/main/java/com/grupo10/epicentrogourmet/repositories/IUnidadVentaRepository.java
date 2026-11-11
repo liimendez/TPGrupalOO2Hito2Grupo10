@@ -26,4 +26,7 @@ public interface IUnidadVentaRepository extends JpaRepository<UnidadVenta, Seria
     // === PARA CAJERO  ===
     @Query("SELECT uv FROM UnidadVenta uv JOIN uv.staff s WHERE s.credenciales.correo = :correo")
     Optional<UnidadVenta> findUnidadByEmpleadoCorreo(@Param("correo") String correo);
+
+    @Query("SELECT DISTINCT uv FROM UnidadVenta uv JOIN uv.staff s LEFT JOIN FETCH uv.festivales f WHERE s.credenciales.correo = :correo")
+    Optional<UnidadVenta> findUnidadConFestivalesByEmpleadoCorreo(@Param("correo") String correo);
 }
