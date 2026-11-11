@@ -21,6 +21,7 @@ public class Pedido {
 	private UnidadVenta unidadVenta;
 
 	@OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+	@OrderBy("id ASC")
 	private Set<DetallePedido> detalles = new HashSet<>();
 
 	@Transient
