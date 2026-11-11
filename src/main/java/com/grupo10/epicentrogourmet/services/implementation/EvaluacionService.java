@@ -75,4 +75,19 @@ public class EvaluacionService implements IEvaluacionService {
         if (esEnObservacion(promedio)) return "EN OBSERVACIÓN ⚠️";
         return "SATISFACTORIO";
     }
+    @Override
+    public List<Evaluacion> getHistorialPorEmpleado(Long empleadoId) {
+        return evaluacionRepository.findByEvaluadoIdOrderByFestivalFechaInicioAsc(empleadoId);
+    }
+
+    @Override
+    public double getPromedioGeneral(Long empleadoId) {
+        List<Evaluacion> lista = getHistorialPorEmpleado(empleadoId);
+        if (lista.isEmpty()) return 0;
+        return lista.stream().mapToDouble(Evaluacion::getPromedio).average().orElse(0);
+    }
+
+
+
+
 }

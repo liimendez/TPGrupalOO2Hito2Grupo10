@@ -16,4 +16,8 @@ public interface IEvaluacionRepository extends JpaRepository<Evaluacion, Long> {
 
     // ranking: mejores promedios primero
     List<Evaluacion> findByFestivalIdOrderByPromedioDesc(Long festivalId);
+
+    List<Evaluacion> findByEvaluadoIdOrderByFestivalFechaInicioAsc(Long empleadoId);
+
+
 }
