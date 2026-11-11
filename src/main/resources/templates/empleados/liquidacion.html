@@ -44,7 +44,9 @@
                 </div>
                 <div class="col-6">
                     <strong>Fecha Ingreso:</strong> <span th:text="${personal.fechaIngreso}">2026-08-12</span><br>
-                    <strong>Antigüedad:</strong> <span th:text="${anios} + ' años'">0 años</span><br>
+                    <span th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cajero)}">
+                        <strong>Antigüedad:</strong> <span th:text="${anios} + ' años'">0 años</span><br>
+                    </span>
                     <strong>Días Trabajados:</strong> <span th:text="${liquidacion.diasDeTrabajo}">60</span>
                 </div>
             </div>
@@ -61,20 +63,17 @@
                 <td class="text-end" th:text="${costos != null ? #numbers.formatDecimal(costos.sueldoBase, 1, 2) : '100.000,00'}">100.000,00</td>
                 <td class="text-end">-</td>
             </tr>
-            <tr>
+            <tr th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cajero)}">
                 <td>1001</td><td>Antigüedad (<span th:text="${anios}">0</span> años x $<span th:text="${costos != null ? #numbers.formatDecimal(costos.valorAntiguedadPorAnio, 1, 0) : '5.000'}">5.000</span>)</td>
                 <td class="text-end" th:text="${anios}">0</td>
                 <td class="text-end" th:text="${costos != null ? #numbers.formatDecimal(anios * costos.valorAntiguedadPorAnio, 1, 2) : '0,00'}">0,00</td>
                 <td class="text-end">-</td>
             </tr>
-            <tr>
+            <tr th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cocinero)}">
                 <td>1002</td>
-                <td>Plus por Categoría <span th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cocinero)}" th:text="'- ' + ${personal.categoriaCocina.nombre}"></span></td>
+                <td>Plus por Categoría <span th:text="'- ' + ${personal.categoriaCocina.nombre}"></span></td>
                 <td class="text-end">1</td>
-                <td class="text-end">
-                    <span th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cocinero)}" th:text="${#numbers.formatDecimal(personal.categoriaCocina.plusFijo, 1, 2)}">150.000,00</span>
-                    <span th:if="${personal instanceof T(com.grupo10.epicentrogourmet.entities.Cajero)}">0,00</span>
-                </td>
+                <td class="text-end" th:text="${#numbers.formatDecimal(personal.categoriaCocina.plusFijo, 1, 2)}">150.000,00</td>
                 <td class="text-end">-</td>
             </tr>
             <tr><td>1003</td><td>Factor Festival (<span th:text="${costos != null ? #numbers.formatDecimal(costos.factorFestival * 100, 1, 0) : '50'}">50</span>% - PDF punto 4)</td><td class="text-end" th:text="${costos != null ? costos.factorFestival : '0,5'}">0,5</td><td class="text-end">-</td><td class="text-end">-</td></tr>
