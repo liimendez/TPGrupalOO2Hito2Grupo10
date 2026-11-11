@@ -29,9 +29,9 @@ Epicentro Gourmet es un sistema de gestión desarrollado para facilitar la admin
 La aplicación contempla distintos roles de usuario, cada uno con funcionalidades específicas:
 
 - **Administrador:** consulta festivales, unidades de venta, rankings de recaudación y reportes de mayores cánones.
-- **Responsable:** administra empleados y platos, consulta información de su unidad de venta y genera reportes de recaudación y rentabilidad.
-- **Empleado:** consulta su información laboral, festivales en los que trabajó, haberes y unidad de trabajo actual.
-- **Cajero:** cuenta con la funcionalidad de cierre de caja diario.
+- **Responsable:** administra empleados (envios de email)  y platos, consulta información de su unidad de venta y genera reportes de recaudación y rentabilidad.
+- **Empleado:** consulta su información laboral, festivales en los que trabajó, pdf de haberes y unidad de trabajo actual.
+- **Cajero:** cuenta con la funcionalidad de cierre de caja diario y alta de pedidos, puede ver su informacion laboral, descargar en formato pdf sus haberes, ver en que unidades trabajo, tiene tickets de los pedidos realizados.
 
 También permite registrar pedidos, calcular costos, liquidar haberes y analizar la rentabilidad de las unidades de venta.
 
