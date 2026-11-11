@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Desempeño Histórico</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; background: #fdf6ec; }
+        .card { background: white; padding: 20px; border-radius: 10px; max-width: 900px; margin: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        h1 { color: #8b4513; }
+        h2 { color: #8b4513; }
+        .resumen { display: flex; gap: 10px; margin: 15px 0; }
+        .box { background: #fff3cd; border: 1px solid #8b4513; border-radius: 8px; padding: 10px; flex: 1; text-align: center; }
+        .box b { font-size: 20px; display: block; }
+        .box span { font-size: 12px; color: #666; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background: #8b4513; color: white; }
+        .destacado { background: #d4edda; font-weight: bold; }
+        .observacion { background: #f8d7da; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>📊 Desempeño Histórico</h1>
+    <h2 th:text="${empleado.nombre} + ' ' + ${empleado.apellido}">Nombre empleado</h2>
+    <p th:text="'Unidad: ' + ${empleado.unidadAsignada.nombreComercial}">Unidad</p>
+
+    <div th:if="${mensaje}" style="background:#fff3cd;padding:10px;border-radius:6px;" th:text="${mensaje}"></div>
+
+    <div class="resumen" th:if="${!historial.isEmpty()}">
+        <div class="box"><b th:text="${#numbers.formatDecimal(promedioGeneral,1,2)}">0.00</b><span>Promedio general</span></div>
+        <div class="box"><b th:text="${cantidad}">0</b><span>Cantidad de evaluaciones</span></div>
+        <div class="box"><b th:text="${mejor != null ? mejor.festival.nombre + ' ' + #numbers.formatDecimal(mejor.promedio,1,2) : '-'}">-</b><span>Mejor festival</span></div>
+        <div class="box"><b th:text="${peor != null ? peor.festival.nombre + ' ' + #numbers.formatDecimal(peor.promedio,1,2) : '-'}">-</b><span>Peor festival</span></div>
+    </div>
+
+    <table th:if="${!historial.isEmpty()}">
+        <tr>
+            <th>Festival</th>
+            <th>Fecha</th>
+            <th>Punt.</th>
+            <th>Atenc.</th>
+            <th>Higiene</th>
+            <th>Promedio</th>
+            <th>Resultado</th>
+        </tr>
+        <tr th:each="e : ${historial}">
+            <td th:text="${e.festival.nombre}"></td>
+            <td th:text="${e.festival.fechaInicio}"></td>
+            <td th:text="${e.puntualidad}"></td>
+            <td th:text="${e.atencionCliente}"></td>
+            <td th:text="${e.higienePresentacion}"></td>
+            <td th:text="${#numbers.formatDecimal(e.promedio,1,2)}"></td>
+            <td th:text="${e.promedio >= umbralDestacado} ? 'DESTACADO ⭐ + Plus $' + ${plusDestacado} : (${e.promedio < umbralObservacion} ? 'EN OBSERVACIÓN ⚠' : 'SATISFACTORIO')"></td>
+        </tr>
+    </table>
+    <p th:if="${historial.isEmpty()}">Este empleado aún no tiene evaluaciones.</p>
+
+    <p style="margin-top: 15px;"><a href="/responsable/unidades">← Volver a Mi Unidad</a></p>
+</div>
+</body>
+</html>

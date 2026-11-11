@@ -20,4 +20,10 @@ public interface IEvaluacionService {
     boolean esEnObservacion(double promedio);
 
     String getResultado(double promedio);
+
+    List<Evaluacion> getHistorialPorEmpleado(Long empleadoId);
+    double getPromedioGeneral(Long empleadoId);
+
+
+
 }

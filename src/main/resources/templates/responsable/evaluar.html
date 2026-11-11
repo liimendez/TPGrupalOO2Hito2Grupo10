@@ -85,6 +85,7 @@
             <th>Higiene</th>
             <th>Promedio</th>
             <th>Resultado</th>
+            <th>Historial</th>
         </tr>
         <tr th:each="e : ${evaluaciones}"
             th:class="${e.promedio >= umbralDestacado} ? 'destacado' : (${e.promedio < umbralObservacion} ? 'observacion' : '')">
@@ -93,7 +94,10 @@
             <td th:text="${e.atencionCliente}"></td>
             <td th:text="${e.higienePresentacion}"></td>
             <td th:text="${#numbers.formatDecimal(e.promedio, 1, 2)}"></td>
-            <td th:text="${e.promedio >= umbralDestacado} ? 'DESTACADO ⭐ + Plus $' + ${plusDestacado} : (${e.promedio < umbralObservacion} ? 'EN OBSERVACIÓN ⚠️' : 'SATISFACTORIO')"></td>
+            <td th:text="${e.promedio >= umbralDestacado} ? 'DESTACADO ⭐ + Plus $' + ${plusDestacado} : (${e.promedio < umbralObservacion} ? 'EN OBSERVACIÓN ⚠' : 'SATISFACTORIO')"></td>
+            <td>
+                <a th:href="@{/responsable/desempeno-historico(empleadoId=${e.evaluado.id})}" style="background:#111;color:#facc15;padding:5px 10px;border-radius:6px;text-decoration:none;font-size:12px;white-space:nowrap;display:inline-block;">Ver Historial</a>
+            </td>
         </tr>
     </table>
     <p th:if="${evaluaciones.isEmpty()}">Todavía no hay evaluaciones en este festival.</p>

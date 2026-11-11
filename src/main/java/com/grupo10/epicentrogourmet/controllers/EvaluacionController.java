@@ -13,6 +13,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.Comparator;
 import java.util.List;
 
 @Controller
@@ -106,4 +108,60 @@ public class EvaluacionController {
         model.addAttribute("plusDestacado", EvaluacionService.PLUS_DESTACADO);
         return "responsable/evaluaciones";
     }
+
+    // cu - desempeño-historico // liimendez
+    @GetMapping("/desempeno-historico")
+    public String verHistorial(@RequestParam Long empleadoId, Model model, Authentication auth) {
+        // 1. Buscar empleado
+        Personal empleado = personalRepository.findById(empleadoId)
+                .orElse(null);
+        if (empleado == null) {
+            return "redirect:/responsable/unidades";
+        }
+
+        // 2. Seguridad: solo empleados de SU unidad
+        String correo = auth.getName();
+        boolean esMio = empleado.getUnidadAsignada() != null
+                && empleado.getUnidadAsignada().getResponsable() != null
+                && correo.equals(empleado.getUnidadAsignada().getResponsable().getCorreo());
+        if (!esMio) {
+            return "redirect:/responsable/unidades";
+        }
+
+        // 3. Traer historial
+        List<Evaluacion> historial = evaluacionService.getHistorialPorEmpleado(empleadoId);
+        double promedioGeneral = evaluacionService.getPromedioGeneral(empleadoId);
+
+        // 4. Si no tiene evaluaciones
+        if (historial.isEmpty()) {
+            model.addAttribute("mensaje", "Este empleado aún no tiene evaluaciones.");
+        }
+
+        // 5. Mejor y peor festival
+        Evaluacion mejor = historial.stream()
+                .max(Comparator.comparingDouble(Evaluacion::getPromedio)).orElse(null);
+        Evaluacion peor = historial.stream()
+                .min(Comparator.comparingDouble(Evaluacion::getPromedio)).orElse(null);
+
+        model.addAttribute("empleado", empleado);
+        model.addAttribute("historial", historial);
+        model.addAttribute("promedioGeneral", promedioGeneral);
+        model.addAttribute("cantidad", historial.size());
+        model.addAttribute("mejor", mejor);
+        model.addAttribute("peor", peor);
+        model.addAttribute("umbralDestacado", EvaluacionService.UMBRAL_DESTACADO);
+        model.addAttribute("umbralObservacion", EvaluacionService.UMBRAL_OBSERVACION);
+        model.addAttribute("plusDestacado", EvaluacionService.PLUS_DESTACADO);
+
+        return "responsable/desempeno-historico";
+    }
+
+
+
+
+
+
+
+
+
 }
