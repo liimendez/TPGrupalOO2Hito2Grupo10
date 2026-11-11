@@ -159,12 +159,12 @@ http://localhost:8080
 
 A continuación se detallan los casos de uso adicionales desarrollados por cada integrante.
 
-### 👩‍💻 Livia Méndez — @liimendez
+### ### 👩‍💻 Livia Méndez — [@liimendez](https://github.com/liimendez)
 
-| Caso de uso | Descripción |
-|---|---|
-| Evaluación de desempeño de empleados | Permite evaluar el desempeño del personal a partir de información relacionada con su actividad laboral. |
-| Historial de ventas por día y entre fechas | Permite consultar el historial de ventas de una unidad de venta, tanto para un día específico como para un período determinado. |
+| Caso de uso implementado | Descripción | Pull Request |
+|---|---|---|
+| Evaluación de desempeño de empleados | Permite al responsable evaluar a los empleados de su unidad en un festival, mediante criterios de puntualidad, atención al cliente e higiene. | [PR #19](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10/pull/19) |
+| Historial de ventas por día y entre fechas | Permite consultar el historial de ventas de una unidad de venta, por día o dentro de un período determinado. | [PR #20](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10/pull/20) |
 
 **Pull Requests:** pendientes de vincular.
 
