@@ -7,12 +7,16 @@ import com.grupo10.epicentrogourmet.repositories.*;
 import com.grupo10.epicentrogourmet.services.IFestivalService;
 import com.grupo10.epicentrogourmet.services.IPedidoService;
 import java.util.Map;
+import java.util.Optional;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -42,6 +46,39 @@ public class PedidoController {
         this.festivalService = festivalService;
     }
 
+    // === FIX SEGURIDAD: nadie ve / vende en una unidad que no es suya ===
+    private UnidadVenta getUnidadDelLogueado() {
+        String correo = SecurityContextHolder.getContext().getAuthentication().getName();
+        Optional<UnidadVenta> opt = unidadVentaRepository.findMiUnidad(correo);
+        if (opt.isPresent()) return opt.get();
+        Personal p = personalRepository.findByCredencialesCorreo(correo)
+                .orElseThrow(() -> new RuntimeException("No existe personal con correo: " + correo));
+        return p.getUnidadAsignada();
+    }
+
+    private boolean esAdmin() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().contains("ADMIN"));
+    }
+
+    private void validarQueEsMiUnidad(Long idUnidadUrl) {
+        if (esAdmin()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El administrador no puede ver pedidos de una unidad.");
+        }
+        UnidadVenta miUnidad = getUnidadDelLogueado();
+        if (miUnidad == null || !miUnidad.getId().equals(idUnidadUrl)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "No podés ver pedidos de la unidad " + idUnidadUrl + " - vos sos de " + (miUnidad != null ? miUnidad.getNombreComercial() : "sin unidad"));
+        }
+    }
+
+    private void validarPlatoEsDeMiUnidad(Plato plato, Long idUnidadUrl) {
+        if (plato.getUnidadVenta() == null || !plato.getUnidadVenta().getId().equals(idUnidadUrl)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Ese plato no es de tu unidad.");
+        }
+    }
+
     @PreAuthorize("hasAnyAuthority('EMPLEADO','ROLE_EMPLEADO')")
     @GetMapping("/new")
     public ModelAndView nuevoPedidoCajero(@RequestParam(required = false) Long unidadId,
@@ -54,6 +91,7 @@ public class PedidoController {
         }
         UnidadVenta uv;
         if(unidadId != null){
+            validarQueEsMiUnidad(unidadId); // <-- FIX: no puede pedir ?unidadId=6 de otra unidad
             uv = unidadVentaRepository.findById(unidadId).orElseThrow();
         } else {
             uv = unidadVentaRepository.findUnidadByEmpleadoCorreo(correo)
@@ -75,6 +113,7 @@ public class PedidoController {
         if(!(personal instanceof Cajero)){
             throw new AccessDeniedException("Solo cajeros pueden dar de alta pedidos");
         }
+        validarQueEsMiUnidad(unidadVentaId); // <-- FIX
         UnidadVenta uv = unidadVentaRepository.findById(unidadVentaId).orElseThrow(() -> new RuntimeException("Unidad no encontrada"));
         ModelAndView mav = new ModelAndView("pedido/form");
         mav.addObject("unidadVenta", uv);
@@ -102,6 +141,7 @@ public class PedidoController {
     @GetMapping("/unidad/{unidadVentaId}")
     @Transactional(readOnly = true)
     public ModelAndView listarPorUnidad(@PathVariable Long unidadVentaId) {
+        validarQueEsMiUnidad(unidadVentaId); // <-- FIX: ESTE ES EL DE TU CAPTURA /pedido/unidad/6
         UnidadVenta uv = unidadVentaRepository.findById(unidadVentaId).orElseThrow();
         var pedidos = pedidoRepository.findByUnidadVentaIdConDetalles(unidadVentaId);
         ModelAndView mav = new ModelAndView("pedido/lista");
@@ -124,7 +164,9 @@ public class PedidoController {
         if(!(personal instanceof Cajero)){
             throw new AccessDeniedException("Solo cajeros pueden dar de alta pedidos - Cocinero no autorizado");
         }
+        validarQueEsMiUnidad(unidadVentaId); // <-- FIX: no puede guardar en otra unidad
         var plato = platoRepository.findById(platoId).orElseThrow();
+        validarPlatoEsDeMiUnidad(plato, unidadVentaId); // <-- FIX: no puede vender un plato de otra unidad
         if(!plato.isActivo()){
             throw new RuntimeException("Plato dado de baja lógica");
         }
@@ -155,6 +197,7 @@ public class PedidoController {
     @GetMapping("/reporte/unidad/{unidadVentaId}")
     @Transactional(readOnly = true)
     public ModelAndView verReporteRecaudacionUnidad(@PathVariable("unidadVentaId") Long unidadVentaId) {
+        validarQueEsMiUnidad(unidadVentaId); // <-- FIX: responsable no ve recaudación de otra unidad
         UnidadVenta unidadVenta = unidadVentaRepository.findById(unidadVentaId)
                 .orElseThrow(() -> new RuntimeException("No se encontro la unidad de venta"));
 
@@ -206,6 +249,13 @@ public class PedidoController {
     @PostMapping("/saveMulti")
     //@Transactional
     public String saveMulti(@RequestParam Long unidadVentaId, @RequestParam Map<String,String> allParams, RedirectAttributes redirectAttributes) {
+        String correo = SecurityContextHolder.getContext().getAuthentication().getName();
+        Personal personal = personalRepository.findByCredencialesCorreo(correo)
+                .orElseThrow(() -> new RuntimeException("Empleado no encontrado: " + correo));
+        if(!(personal instanceof Cajero)){
+            throw new AccessDeniedException("Solo cajeros pueden dar de alta pedidos - Cocinero no autorizado");
+        }
+        validarQueEsMiUnidad(unidadVentaId); // <-- FIX
         UnidadVenta unidad = unidadVentaRepository.findById(unidadVentaId).orElseThrow();
         Pedido pedido = new Pedido();
         pedido.setUnidadVenta(unidad);
@@ -219,6 +269,7 @@ public class PedidoController {
             if (cant <= 0) continue;
             Long platoId = Long.parseLong(key.substring(5));
             Plato plato = platoRepository.findById(platoId).orElseThrow();
+            validarPlatoEsDeMiUnidad(plato, unidadVentaId); // <-- FIX: no mezcla platos de otra unidad
             DetallePedido det = new DetallePedido();
             det.setPlato(plato);
             det.setCantidad(cant);

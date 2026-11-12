@@ -5,18 +5,25 @@ import com.grupo10.epicentrogourmet.dtos.RentabilidadNetaDTO;
 import com.grupo10.epicentrogourmet.dtos.RequestFestivalDTO;
 import com.grupo10.epicentrogourmet.entities.Festival;
 import com.grupo10.epicentrogourmet.entities.Pedido;
+import com.grupo10.epicentrogourmet.entities.Personal;
 import com.grupo10.epicentrogourmet.entities.UnidadVenta;
 import com.grupo10.epicentrogourmet.helpers.ViewRouteHelper;
 import com.grupo10.epicentrogourmet.repositories.IPedidoRepository;
+import com.grupo10.epicentrogourmet.repositories.IPersonalRepository;
+import com.grupo10.epicentrogourmet.repositories.IUnidadVentaRepository;
 import com.grupo10.epicentrogourmet.services.IFestivalService;
 import com.grupo10.epicentrogourmet.services.IUnidadVentaService;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.time.LocalDate;
@@ -30,13 +37,43 @@ public class FestivalController {
     private final IFestivalService festivalService;
     private final IUnidadVentaService unidadVentaService;
     private final IPedidoRepository pedidoRepository;
+    private final IPersonalRepository personalRepository;
+    private final IUnidadVentaRepository unidadVentaRepository;
 
     public FestivalController(IFestivalService festivalService,
                               IUnidadVentaService unidadVentaService,
-                              IPedidoRepository pedidoRepository) {
+                              IPedidoRepository pedidoRepository,
+                              IPersonalRepository personalRepository,
+                              IUnidadVentaRepository unidadVentaRepository) {
         this.festivalService = festivalService;
         this.unidadVentaService = unidadVentaService;
         this.pedidoRepository = pedidoRepository;
+        this.personalRepository = personalRepository;
+        this.unidadVentaRepository = unidadVentaRepository;
+    }
+
+    // === FIX SEGURIDAD ===
+    private UnidadVenta getUnidadDelLogueado() {
+        String correo = SecurityContextHolder.getContext().getAuthentication().getName();
+        Optional<UnidadVenta> opt = unidadVentaRepository.findMiUnidad(correo);
+        if (opt.isPresent()) return opt.get();
+        Personal p = personalRepository.findByCredencialesCorreo(correo)
+                .orElseThrow(() -> new RuntimeException("No existe personal con correo: " + correo));
+        return p.getUnidadAsignada();
+    }
+
+    private boolean esAdmin() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().contains("ADMIN"));
+    }
+
+    private void validarQueEsMiUnidad(Long idUnidadUrl) {
+        if (esAdmin()) return; // admin sí puede ver rentabilidad / etc de cualquier unidad, pero NO operar
+        UnidadVenta miUnidad = getUnidadDelLogueado();
+        if (miUnidad == null || !miUnidad.getId().equals(idUnidadUrl)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "No podés ver datos de la unidad " + idUnidadUrl + " - vos sos de " + (miUnidad != null ? miUnidad.getNombreComercial() : "sin unidad"));
+        }
     }
 
     @GetMapping("/new")
@@ -100,6 +137,7 @@ public class FestivalController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('ADMIN','ROLE_ADMIN','RESPONSABLE','ROLE_RESPONSABLE','EMPLEADO','ROLE_EMPLEADO')")
     public ModelAndView verFestival(@PathVariable Long id, @AuthenticationPrincipal UserDetails user) {
         ModelAndView mav = new ModelAndView("festival/detalle");
         Festival festival = festivalService.findByIdWithUnidades(id).orElseThrow(() -> new RuntimeException("Festival no encontrado"));
@@ -109,6 +147,8 @@ public class FestivalController {
                 .anyMatch(a -> a.getAuthority().contains("RESPONSABLE"));
         boolean esAdmin = user != null && user.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().contains("ADMIN"));
+        boolean esEmpleado = user != null && user.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().contains("EMPLEADO"));
 
         mav.addObject("esResponsable", esResponsable);
         mav.addObject("esAdmin", esAdmin);
@@ -126,6 +166,17 @@ public class FestivalController {
                 mav.addObject("yaAnotado", false);
                 mav.addObject("unidadesParaMostrar", List.of());
             }
+        } else if (esEmpleado) {
+            // FIX: antes el empleado caía en el else de ADMIN y veía todas las unidades
+            UnidadVenta miUnidad = getUnidadDelLogueado();
+            boolean yaAnotado = miUnidad != null && festival.getUnidadesVenta().stream()
+                    .anyMatch(uv -> uv.getId().equals(miUnidad.getId()));
+            if (!yaAnotado) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tu unidad no está anotada en este festival.");
+            }
+            mav.addObject("miUnidad", miUnidad);
+            mav.addObject("yaAnotado", true);
+            mav.addObject("unidadesParaMostrar", List.of(miUnidad));
         } else {
             // ADMIN
             mav.addObject("unidadesParaMostrar", festival.getUnidadesVenta());
@@ -139,6 +190,7 @@ public class FestivalController {
     @PostMapping("/{festivalId}/agregar-unidad")
     @PreAuthorize("hasRole('RESPONSABLE')")
     public ModelAndView agregarUnidad(@PathVariable Long festivalId, @RequestParam Long unidadVentaId) {
+        validarQueEsMiUnidad(unidadVentaId); // <-- FIX: solo puede anotar SU unidad
         try {
             festivalService.agregarUnidadAFestival(festivalId, unidadVentaId);
             return new ModelAndView("redirect:/festival/" + festivalId + "?unidadAgregada=true");
@@ -202,7 +254,7 @@ public class FestivalController {
     @GetMapping("/rentabilidad")
     @PreAuthorize("hasRole('RESPONSABLE')")
     public ModelAndView verRentabilidadNeta(@RequestParam Long festivalId, @RequestParam Long unidadVentaId) {
-
+        validarQueEsMiUnidad(unidadVentaId); // <-- FIX
         ModelAndView mav = new ModelAndView("responsable/rentabilidad-neta");
 
         Festival festival = festivalService.findById(festivalId)
@@ -224,7 +276,7 @@ public class FestivalController {
     public ModelAndView verRentabilidadNetaEntreFechas(
             @RequestParam Long festivalId, @RequestParam Long unidadVentaId,
             @RequestParam LocalDate desde, @RequestParam LocalDate hasta) {
-
+        validarQueEsMiUnidad(unidadVentaId); // <-- FIX
         ModelAndView mav = new ModelAndView("responsable/rentabilidad-neta");
 
         Festival festival = festivalService.findById(festivalId)
@@ -251,6 +303,7 @@ public class FestivalController {
     @GetMapping("/plato-estrella")
     @PreAuthorize("hasRole('RESPONSABLE')")
     public ModelAndView verPlatoEstrella(@RequestParam Long festivalId, @RequestParam Long unidadVentaId) {
+        validarQueEsMiUnidad(unidadVentaId); // <-- FIX
         ModelAndView mav = new ModelAndView("responsable/plato-estrella");
 
         Festival festival = festivalService.findById(festivalId)

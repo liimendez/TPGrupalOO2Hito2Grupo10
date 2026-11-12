@@ -3,6 +3,7 @@ package com.grupo10.epicentrogourmet.controllers;
 import com.grupo10.epicentrogourmet.entities.Usuario;
 import com.grupo10.epicentrogourmet.helpers.ViewRouteHelper;
 import com.grupo10.epicentrogourmet.services.IUsuarioService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +28,7 @@ public class UserController {
         return "redirect:/index";
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN','ROLE_ADMIN')")
     @GetMapping("/usuarios/lista")
     public String listaUsuarios(Model model) {
         var responsables = usuarioService.getAll().stream()
@@ -38,6 +40,7 @@ public class UserController {
         return "user/lista";
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN','ROLE_ADMIN')")
     @GetMapping("/usuarios/eliminar/{id}")
     public ModelAndView eliminar(@PathVariable Long id) {
         if (id == 1) {
@@ -55,6 +58,7 @@ public class UserController {
         return new ModelAndView("redirect:/usuarios/lista");
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN','ROLE_ADMIN')")
     @GetMapping("/usuarios/alta/{id}")
     public ModelAndView alta(@PathVariable Long id) {
         Usuario u = usuarioService.findById(id).orElseThrow();
@@ -63,6 +67,7 @@ public class UserController {
         return new ModelAndView("redirect:/usuarios/lista");
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN','ROLE_ADMIN')")
     @GetMapping("/usuarios/editar/{id}")
     public ModelAndView editarForm(@PathVariable Long id) {
         ModelAndView mav = new ModelAndView("user/editar");
@@ -70,8 +75,13 @@ public class UserController {
         return mav;
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN','ROLE_ADMIN')")
     @PostMapping("/usuarios/editar/{id}")
     public ModelAndView editarSave(@PathVariable Long id, @RequestParam String correo) {
+        if (id == 1) {
+            ModelAndView mav = new ModelAndView("redirect:/usuarios/lista");
+            return mav;
+        }
         Usuario u = usuarioService.findById(id).orElseThrow();
         u.setCorreo(correo);
         usuarioService.insertOrUpdate(u);

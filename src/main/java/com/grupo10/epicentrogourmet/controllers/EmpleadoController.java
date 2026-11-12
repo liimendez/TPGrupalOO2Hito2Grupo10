@@ -85,24 +85,56 @@ public class EmpleadoController {
         }
     }
 
+    // === FIX: no dejar 2 empleados con el mismo DNI ===
+    private void validarDniNoRepetido(String dni, Long idActual) {
+        if (dni == null || dni.isBlank()) return;
+        String dniLimpio = dni.trim();
+        Optional<Personal> existente = personalRepository.findByDni(dniLimpio);
+        if (existente.isPresent() && (idActual == null || !existente.get().getId().equals(idActual))) {
+            throw new IllegalArgumentException("Ya existe un empleado con el DNI " + dniLimpio + ". No se puede registrar 2 veces el mismo DNI.");
+        }
+    }
+
     @GetMapping({"/lista", "/listaEmpleado"})
     @Transactional
-    public String listaEmpleados(@RequestParam(value = "filtro", required = false) String filtro, Model model) {
+    public String listaEmpleados(@RequestParam(value = "filtro", required = false) String filtro,
+                                 @RequestParam(value = "turno", required = false) String turno,
+                                 Model model) {
         UnidadVenta uv = getUnidadDelLogueado();
         var empleados = personalRepository.findByUnidadVentaId(uv.getId());
         if (filtro != null && !filtro.isBlank()) {
-            String f = filtro.toLowerCase();
+            String f = filtro.toLowerCase().trim();
             empleados = empleados.stream()
-                    .filter(e ->
-                            (e.getNombre() != null && e.getNombre().toLowerCase().contains(f)) ||
-                                    (e.getApellido() != null && e.getApellido().toLowerCase().contains(f)) ||
-                                    (e.getDni() != null && e.getDni().toLowerCase().contains(f)) ||
-                                    (e.getCredenciales() != null && e.getCredenciales().getCorreo() != null
-                                            && e.getCredenciales().getCorreo().toLowerCase().contains(f))
-                    ).toList();
+                    .filter(e -> {
+                        String nombre = e.getNombre() != null ? e.getNombre().toLowerCase() : "";
+                        String apellido = e.getApellido() != null ? e.getApellido().toLowerCase() : "";
+                        String nombreCompleto = (nombre + " " + apellido).trim();
+                        String nombreCompletoInvertido = (apellido + " " + nombre).trim();
+                        String dni = e.getDni() != null ? e.getDni().toLowerCase() : "";
+                        String correo = (e.getCredenciales() != null && e.getCredenciales().getCorreo() != null)
+                                ? e.getCredenciales().getCorreo().toLowerCase() : "";
+                        return nombre.contains(f)
+                                || apellido.contains(f)
+                                || nombreCompleto.contains(f)
+                                || nombreCompletoInvertido.contains(f)
+                                || dni.contains(f)
+                                || correo.contains(f);
+                    }).toList();
+        }
+        if (turno != null && !turno.isBlank()) {
+            if (turno.equals("SIN_TURNO")) {
+                empleados = empleados.stream()
+                        .filter(e -> !(e instanceof Cajero))
+                        .toList();
+            } else {
+                empleados = empleados.stream()
+                        .filter(e -> e instanceof Cajero caj && caj.getTurno() != null && caj.getTurno().toString().equalsIgnoreCase(turno))
+                        .toList();
+            }
         }
         model.addAttribute("empleados", empleados);
         model.addAttribute("filtro", filtro);
+        model.addAttribute("turno", turno);
         model.addAttribute("unidad", uv);
         model.addAttribute("categoriasCocina", categoriaCocinaRepository.findAll());
         if (!model.containsAttribute("nuevoEmpleado")) {
@@ -123,10 +155,11 @@ public class EmpleadoController {
         }
         UnidadVenta uv = getUnidadDelLogueado();
         try {
+            validarDniNoRepetido(req.getDni(), null);
             PersonalDTO dto = new PersonalDTO();
             dto.setNombre(req.getNombre());
             dto.setApellido(req.getApellido());
-            dto.setDni(req.getDni());
+            dto.setDni(req.getDni() != null ? req.getDni().trim() : null);
             dto.setEmail(req.getEmail());
             dto.setFechaNacimiento(req.getFechaNacimiento());
             dto.setFechaIngreso(req.getFechaIngreso());
@@ -205,6 +238,12 @@ public class EmpleadoController {
         }
         var p = personalRepository.findByIdIncludingInactive(id).orElseThrow();
         validarQueEsDeMiUnidad(p);
+        try {
+            validarDniNoRepetido(req.getDni(), id);
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/empleado/lista";
+        }
         String tipoNuevo = req.getTipoPersonal();
         String tipoViejo = p instanceof Cajero ? "CAJERO" : "COCINERO";
         if (!tipoViejo.equals(tipoNuevo)) {
@@ -241,7 +280,7 @@ public class EmpleadoController {
                 personalRepository.save(p);
             }
         }
-        p.setNombre(req.getNombre()); p.setApellido(req.getApellido()); p.setDni(req.getDni());
+        p.setNombre(req.getNombre()); p.setApellido(req.getApellido()); p.setDni(req.getDni() != null ? req.getDni().trim() : null);
         p.setFechaNacimiento(req.getFechaNacimiento()); p.setFechaIngreso(req.getFechaIngreso());
         personalRepository.save(p);
         if (p.getCredenciales() != null) {
@@ -279,7 +318,6 @@ public class EmpleadoController {
                 return "redirect:/empleado/liquidaciones/" + id;
             }
         } else {
-            // Fallback: si no hay festival activo, no permitir 2 en el mismo mes
             LocalDate inicioMes = hoy.withDayOfMonth(1);
             LocalDate finMes = hoy.withDayOfMonth(hoy.lengthOfMonth());
             boolean yaLiquidadoEsteMes = liquidacionDeHaberService
@@ -291,8 +329,6 @@ public class EmpleadoController {
             }
         }
 
-        // Si pasa la validación, el service vuelve a validar y crea la liquidación
-        // Si el service tira RuntimeException (ya liquidado), lo atrapamos para mostrar el error
         LiquidacionDeHaber liq;
         try {
             liq = liquidacionDeHaberService.liquidar(p.getId(), uv.getId());

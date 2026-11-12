@@ -3,20 +3,38 @@ package com.grupo10.epicentrogourmet.controllers;
 import com.grupo10.epicentrogourmet.entities.Plato;
 import com.grupo10.epicentrogourmet.entities.UnidadVenta;
 import com.grupo10.epicentrogourmet.services.IUnidadVentaService;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 
 @Controller
 @RequestMapping("/mi-unidad")
+@PreAuthorize("hasAnyAuthority('RESPONSABLE','ROLE_RESPONSABLE')") // <-- FIX: solo RESPONSABLE
 public class MiUnidadController {
 
     private final IUnidadVentaService unidadVentaService;
 
     public MiUnidadController(IUnidadVentaService unidadVentaService) {
         this.unidadVentaService = unidadVentaService;
+    }
+
+    // === FIX SEGURIDAD ===
+    private UnidadVenta getMiUnidad() {
+        String correo = SecurityContextHolder.getContext().getAuthentication().getName();
+        return unidadVentaService.findByCorreoResponsable(correo);
+    }
+
+    private void validarPlatoEsMio(Long platoId) {
+        UnidadVenta miUnidad = getMiUnidad();
+        Plato plato = unidadVentaService.findPlatoById(platoId);
+        if (plato == null || plato.getUnidadVenta() == null || !plato.getUnidadVenta().getId().equals(miUnidad.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Ese plato no es de tu unidad.");
+        }
     }
 
     @GetMapping
@@ -51,12 +69,14 @@ public class MiUnidadController {
 
     @GetMapping("/plato/eliminar/{id}")
     public ModelAndView eliminarPlato(@PathVariable("id") Long id) {
+        validarPlatoEsMio(id); // <-- FIX: no puede borrar plato de otra unidad
         unidadVentaService.eliminarPlato(id);
         return new ModelAndView("redirect:/mi-unidad?platoDeleted=true");
     }
 
     @GetMapping("/plato/editar/{id}")
     public ModelAndView editarPlatoForm(@PathVariable("id") Long id) {
+        validarPlatoEsMio(id); // <-- FIX
         Plato plato = unidadVentaService.findPlatoById(id);
         ModelAndView mav = new ModelAndView("unidad-venta/editar-plato");
         mav.addObject("plato", plato);
@@ -66,6 +86,7 @@ public class MiUnidadController {
 
     @PostMapping("/plato/editar/{id}")
     public ModelAndView editarPlato(@PathVariable("id") Long id, @ModelAttribute("plato") Plato plato) {
+        validarPlatoEsMio(id); // <-- FIX
         String error = validarPlato(plato);
         if (error != null) {
             return new ModelAndView("redirect:/mi-unidad?platoError=" + error);
@@ -73,7 +94,6 @@ public class MiUnidadController {
         unidadVentaService.modificarPlato(id, plato);
         return new ModelAndView("redirect:/mi-unidad?platoEdited=true");
     }
-
 
     private String validarPlato(Plato plato) {
         if (plato.getNombre() == null || plato.getNombre().trim().isEmpty()) {
@@ -90,7 +110,6 @@ public class MiUnidadController {
         }
         return null;
     }
-
 
     private String traducirError(String codigo) {
         switch (codigo) {
