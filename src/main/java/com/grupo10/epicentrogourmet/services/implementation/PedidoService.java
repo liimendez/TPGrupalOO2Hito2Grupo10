@@ -4,6 +4,7 @@ import com.grupo10.epicentrogourmet.dtos.DetallePedidoDTO;
 import com.grupo10.epicentrogourmet.dtos.PedidoDTO;
 import com.grupo10.epicentrogourmet.dtos.ReporteVentaDTO;
 import com.grupo10.epicentrogourmet.entities.*;
+import com.grupo10.epicentrogourmet.repositories.IMetodoPagoRepository;
 import com.grupo10.epicentrogourmet.repositories.IPedidoRepository;
 import com.grupo10.epicentrogourmet.repositories.IPlatoRepository;
 import com.grupo10.epicentrogourmet.services.IPedidoService;
@@ -23,6 +24,9 @@ public class PedidoService implements IPedidoService {
     @Autowired
     private IPlatoRepository platoRepository;
 
+    @Autowired
+    private IMetodoPagoRepository metodoPagoRepository;
+
     @Override
     public List<Pedido> getAll() { return pedidoRepository.findAll(); }
 
@@ -32,6 +36,17 @@ public class PedidoService implements IPedidoService {
     @Override
     @Transactional
     public Pedido insertOrUpdate(Pedido pedido) {
+
+        List<MetodoPago> metodosActivos = metodoPagoRepository.findByActivoTrue();
+
+        if (!metodosActivos.isEmpty()) {
+            if (pedido.getMetodoPago() == null || pedido.getMetodoPago().getId() == null) {
+                throw new IllegalArgumentException("Debe seleccionar un método de pago.");
+            }
+        } else {
+            pedido.setMetodoPago(null);
+        }
+
         if (pedido.getDetalles() != null) {
             for (DetallePedido detalle : pedido.getDetalles()) {
                 if (detalle.getPlato() != null && detalle.getPlato().getId() != null) {
@@ -94,6 +109,15 @@ public class PedidoService implements IPedidoService {
         dto.setTotal(pedido.getTotal());
         dto.setCostoTotal(pedido.getCostoTotal());
         dto.setCantidadDetalles(pedido.getDetalles().size());
+
+        if (pedido.getMetodoPago() != null) {
+            dto.setMetodoPagoNombre(pedido.getMetodoPago().getNombre());
+            dto.setMetodoPagoDescuento(pedido.getMetodoPago().getDescuentoPorcentaje());
+
+            double subtotalSinDescuento = pedido.getDetalles().stream().mapToDouble(d -> d.getSubtotal()).sum();
+            double descuentoCalculado = subtotalSinDescuento - pedido.getTotal();
+            dto.setMontoDescuento(descuentoCalculado);
+        }
 
         var listaDetalles = pedido.getDetalles().stream().map(d -> {
             return DetallePedidoDTO.builder()
