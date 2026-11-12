@@ -16,4 +16,8 @@ public class PedidoDTO {
     private double total;
     private double costoTotal;
     private List<DetallePedidoDTO> detalles;
+
+    private String metodoPagoNombre;
+    private double metodoPagoDescuento;
+    private double montoDescuento;
 }

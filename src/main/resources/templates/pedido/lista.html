@@ -40,6 +40,13 @@
                 <span class="det-subtotal" th:text="'$' + ${det.subtotal}"></span>
             </div>
 
+            <div th:if="${ticket.metodoPagoNombre != null}" class="ticket-row text-secondary" style="font-size: 11px; margin-top: 4px;">
+                <span>Pago: <strong th:text="${ticket.metodoPagoNombre}"></strong></span>
+                <span th:if="${ticket.montoDescuento > 0}"
+                      th:text="'- $' + ${ticket.montoDescuento}">
+                </span>
+            </div>
+
             <div class="ticket-divider"></div>
             <div class="ticket-total">
                 <span>TOTAL</span>

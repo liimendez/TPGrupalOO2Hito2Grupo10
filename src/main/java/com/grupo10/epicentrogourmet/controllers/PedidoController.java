@@ -6,6 +6,7 @@ import com.grupo10.epicentrogourmet.entities.*;
 import com.grupo10.epicentrogourmet.repositories.*;
 import com.grupo10.epicentrogourmet.services.IFestivalService;
 import com.grupo10.epicentrogourmet.services.IPedidoService;
+import com.grupo10.epicentrogourmet.repositories.IMetodoPagoRepository;
 import java.util.Map;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,10 +30,11 @@ public class PedidoController {
     private final IFestivalRepository festivalRepository;
     private final IPersonalRepository personalRepository;
     private final IFestivalService festivalService;
+    private final IMetodoPagoRepository metodoPagoRepository;
 
     public PedidoController(IPedidoRepository pedidoRepository, IPlatoRepository platoRepository, IUnidadVentaRepository unidadVentaRepository,
                             IPedidoService pedidoService, IFestivalRepository festivalRepository,
-                            IPersonalRepository personalRepository, IFestivalService festivalService) {
+                            IPersonalRepository personalRepository, IFestivalService festivalService, IMetodoPagoRepository metodoPagoRepository) {
         this.pedidoRepository = pedidoRepository;
         this.platoRepository = platoRepository;
         this.unidadVentaRepository = unidadVentaRepository;
@@ -40,6 +42,7 @@ public class PedidoController {
         this.festivalRepository = festivalRepository;
         this.personalRepository = personalRepository;
         this.festivalService = festivalService;
+        this.metodoPagoRepository = metodoPagoRepository;
     }
 
     @PreAuthorize("hasAnyAuthority('EMPLEADO','ROLE_EMPLEADO')")
@@ -63,6 +66,9 @@ public class PedidoController {
         mav.addObject("unidadVenta", uv);
         mav.addObject("platos", platoRepository.findByUnidadVenta_IdAndActivoTrue(uv.getId()));
         mav.addObject("platoIdPreseleccionado", platoId);
+
+        mav.addObject("metodosPago", metodoPagoRepository.findByActivoTrue());
+
         return mav;
     }
 
@@ -79,6 +85,9 @@ public class PedidoController {
         ModelAndView mav = new ModelAndView("pedido/form");
         mav.addObject("unidadVenta", uv);
         mav.addObject("platos", platoRepository.findByUnidadVenta_IdAndActivoTrue(unidadVentaId));
+
+        mav.addObject("metodosPago", metodoPagoRepository.findByActivoTrue());
+
         return mav;
     }
 
@@ -117,6 +126,7 @@ public class PedidoController {
     public ModelAndView guardarPedido(@RequestParam Long unidadVentaId,
                                       @RequestParam Long platoId,
                                       @RequestParam int cantidad,
+                                      @RequestParam(required = false) Long metodoPagoId,
                                       RedirectAttributes redirectAttributes) {
         String correo = SecurityContextHolder.getContext().getAuthentication().getName();
         Personal personal = personalRepository.findByCredencialesCorreo(correo)
@@ -132,6 +142,12 @@ public class PedidoController {
         Pedido pedido = new Pedido();
         pedido.setUnidadVenta(uv);
         pedido.setFechaPedido(LocalDate.now());
+
+        if (metodoPagoId != null) {
+            MetodoPago mp = metodoPagoRepository.findById(metodoPagoId).orElse(null);
+            pedido.setMetodoPago(mp);
+        }
+
         DetallePedido detalle = new DetallePedido();
         detalle.setCantidad(cantidad);
         detalle.setPlato(plato);
@@ -205,11 +221,16 @@ public class PedidoController {
     @PreAuthorize("hasAnyAuthority('EMPLEADO','ROLE_EMPLEADO')")
     @PostMapping("/saveMulti")
     //@Transactional
-    public String saveMulti(@RequestParam Long unidadVentaId, @RequestParam Map<String,String> allParams, RedirectAttributes redirectAttributes) {
+    public String saveMulti(@RequestParam Long unidadVentaId, @RequestParam(required = false) Long metodoPagoId, @RequestParam Map<String,String> allParams, RedirectAttributes redirectAttributes) {
         UnidadVenta unidad = unidadVentaRepository.findById(unidadVentaId).orElseThrow();
         Pedido pedido = new Pedido();
         pedido.setUnidadVenta(unidad);
         pedido.setFechaPedido(LocalDate.now());
+
+        if (metodoPagoId != null) {
+            MetodoPago mp = metodoPagoRepository.findById(metodoPagoId).orElse(null);
+            pedido.setMetodoPago(mp);
+        }
 
         int agregados = 0;
         for (String key : allParams.keySet()) {

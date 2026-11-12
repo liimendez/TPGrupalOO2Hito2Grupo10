@@ -218,8 +218,7 @@ public class FestivalService implements IFestivalService {
                 .toList();
 
         double totalRecaudado = pedidosHoy.stream()
-                .mapToDouble(p -> p.getDetalles() == null ? 0 : p.getDetalles().stream()
-                        .mapToDouble(d -> d.getSubtotal()).sum())
+                .mapToDouble(Pedido::getTotal)
                 .sum();
 
         return CierreCajaDTO.builder()
