@@ -172,7 +172,11 @@ A continuación se detallan los casos de uso adicionales desarrollados por cada 
 
 ### 👨‍💻 Santiago Sosa — @santisosa-gh
 
-*Casos de uso pendientes de completar.*
+| Caso de uso implementado | Descripción | Pull Request |
+|---|---|---|
+| Gestión de Stock de Platos | Permite al Responsable registrar, modificar y controlar el stock disponible de los platos de la unidad, descontando automáticamente las unidades al registrar un pedido y bloqueando la operación en caso de no haber stock suficiente. | [PR #26](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10/pull/26) |
+| Gestión de Métodos de Pago | Permite al Responsable de la unidad realizar el ABM (Alta, Baja, Modificación) de los métodos de pago disponibles (ej. Efectivo, Tarjeta, Transferencia), configurando para cada uno su nombre y un porcentaje de descuento comercial aplicable a los pedidos. | [PR #27](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10/pull/27) |
+
 
 ---
 
