@@ -26,6 +26,9 @@ public class Plato {
 	@Column(nullable = false)
 	private boolean activo = true;
 
+	@Column(nullable = true)
+	private Integer stockPlato;
+
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "unidad_venta_id")
 	private UnidadVenta unidadVenta;

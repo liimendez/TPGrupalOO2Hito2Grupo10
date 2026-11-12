@@ -12,6 +12,8 @@ import com.grupo10.epicentrogourmet.helpers.ViewRouteHelper;
 import com.grupo10.epicentrogourmet.services.IUnidadVentaService;
 import com.grupo10.epicentrogourmet.repositories.IPlatoRepository;
 import com.grupo10.epicentrogourmet.repositories.IUsuarioRepository;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 import java.util.Comparator;
 
 @Controller
@@ -81,12 +83,22 @@ public class UnidadVentaController {
 
     @PostMapping("/{id}/agregar-plato")
     @PreAuthorize("hasRole('RESPONSABLE')")
-    public String agregarPlato(@PathVariable Long id, @RequestParam String nombre, @RequestParam double costoProduccion, @RequestParam double precioVenta, @RequestParam(required = false) String imagenUrl) {
+    public String agregarPlato(@PathVariable Long id, @RequestParam String nombre, @RequestParam double costoProduccion, @RequestParam double precioVenta, @RequestParam(required = false) String imagenUrl,
+                               @RequestParam(required = false) Integer stockPlato,
+                               RedirectAttributes redirectAttributes) {
+
+        if (stockPlato != null && stockPlato < 0) {
+            redirectAttributes.addFlashAttribute("platoError", "El stock no puede ser un valor negativo.");
+            return "redirect:/unidad-venta/" + id;
+        }
+
         Plato plato = new Plato();
         plato.setNombre(nombre);
         plato.setCostoProduccion(costoProduccion);
         plato.setPrecioVenta(precioVenta);
         plato.setImagenUrl(imagenUrl);
+        plato.setStockPlato(stockPlato);
+
         unidadVentaService.agregarPlato(id, plato);
         return "redirect:/unidad-venta/" + id;
     }
@@ -119,12 +131,23 @@ public class UnidadVentaController {
                               @RequestParam double costoProduccion,
                               @RequestParam double precioVenta,
                               @RequestParam(required = false) String imagenUrl,
-                              @RequestParam(value="origen", required=false) String origen) {
+                              @RequestParam(value="origen", required=false) String origen,
+                              @RequestParam(required = false) Integer stockPlato,
+                              RedirectAttributes redirectAttributes) {
+
+        if (stockPlato != null && stockPlato < 0) {
+            Long unidadIdTemp = platoRepository.findByIdWithUnidad(platoId).get().getUnidadVenta().getId();
+            redirectAttributes.addFlashAttribute("platoError", "El stock no puede ser un valor negativo.");
+            return "redirect:/unidad-venta/" + unidadIdTemp;
+        }
+
         Plato actualizado = new Plato();
         actualizado.setNombre(nombre);
         actualizado.setCostoProduccion(costoProduccion);
         actualizado.setPrecioVenta(precioVenta);
         actualizado.setImagenUrl(imagenUrl);
+        actualizado.setStockPlato(stockPlato);
+
         unidadVentaService.modificarPlato(platoId, actualizado);
         if("mi-unidad".equals(origen)) return "redirect:/mi-unidad?platoEdited=true";
         return "redirect:/unidad-venta/" + platoRepository.findByIdWithUnidad(platoId).get().getUnidadVenta().getId();
