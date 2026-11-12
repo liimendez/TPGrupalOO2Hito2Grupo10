@@ -182,6 +182,7 @@ A continuación se detallan los casos de uso adicionales desarrollados por cada 
 
 - 📊 **Diagrama de clases:** [Ver diagrama de clases (PDF)](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10/blob/main/diagrama.drawio.pdf)
 - 💻 **Repositorio GitHub:** [TPGrupalOO2Hito2Grupo10](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10)
+- 📦 **Base de datos:** [epicentro_grupo10.sql](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10/blob/main/epicentro_grupo10.sql)
 
 ## 🌿 Metodología de trabajo
 
