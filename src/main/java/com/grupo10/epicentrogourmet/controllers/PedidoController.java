@@ -14,6 +14,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 
@@ -112,10 +113,11 @@ public class PedidoController {
 
     @PreAuthorize("hasAnyAuthority('EMPLEADO','ROLE_EMPLEADO')")
     @PostMapping("/save")
-    @Transactional
+    //@Transactional
     public ModelAndView guardarPedido(@RequestParam Long unidadVentaId,
                                       @RequestParam Long platoId,
-                                      @RequestParam int cantidad) {
+                                      @RequestParam int cantidad,
+                                      RedirectAttributes redirectAttributes) {
         String correo = SecurityContextHolder.getContext().getAuthentication().getName();
         Personal personal = personalRepository.findByCredencialesCorreo(correo)
                 .orElseThrow(() -> new RuntimeException("Empleado no encontrado: " + correo));
@@ -137,7 +139,15 @@ public class PedidoController {
         detalle.setSubtotal(cantidad * plato.getPrecioVenta());
         detalle.setPedido(pedido);
         pedido.getDetalles().add(detalle);
-        pedidoRepository.save(pedido);
+
+        try {
+            pedidoService.insertOrUpdate(pedido);
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return new ModelAndView("redirect:/unidad-venta/" + unidadVentaId);
+        }
+
+        //pedidoRepository.save(pedido);
         return new ModelAndView("redirect:/pedido/unidad/" + unidadVentaId);
     }
 
@@ -194,8 +204,8 @@ public class PedidoController {
 
     @PreAuthorize("hasAnyAuthority('EMPLEADO','ROLE_EMPLEADO')")
     @PostMapping("/saveMulti")
-    @Transactional
-    public String saveMulti(@RequestParam Long unidadVentaId, @RequestParam Map<String,String> allParams) {
+    //@Transactional
+    public String saveMulti(@RequestParam Long unidadVentaId, @RequestParam Map<String,String> allParams, RedirectAttributes redirectAttributes) {
         UnidadVenta unidad = unidadVentaRepository.findById(unidadVentaId).orElseThrow();
         Pedido pedido = new Pedido();
         pedido.setUnidadVenta(unidad);
@@ -220,7 +230,15 @@ public class PedidoController {
         if (agregados == 0) {
             return "redirect:/pedido/new?unidadId=" + unidadVentaId + "&error=vacio";
         }
-        pedidoRepository.save(pedido);
+
+        try {
+            pedidoService.insertOrUpdate(pedido);
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/unidad-venta/" + unidadVentaId;
+        }
+
+        //pedidoRepository.save(pedido);
         return "redirect:/pedido/unidad/" + unidadVentaId + "?success";
     }
 

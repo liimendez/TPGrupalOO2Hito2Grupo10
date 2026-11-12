@@ -164,6 +164,7 @@ public class UnidadVentaService implements IUnidadVentaService {
         existente.setPrecioVenta(platoActualizado.getPrecioVenta());
         existente.setCostoProduccion(platoActualizado.getCostoProduccion());
         existente.setImagenUrl(platoActualizado.getImagenUrl());
+        existente.setStockPlato(platoActualizado.getStockPlato());
         platoRepository.save(existente);
     }
 

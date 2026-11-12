@@ -70,6 +70,10 @@
                     <label class="form-label text-light opacity-75 small fw-bold">Costo Producción</label>
                     <input type="number" step="0.01" min="0" th:field="*{costoProduccion}" class="form-control bg-white text-dark" placeholder="800" required>
                 </div>
+                <div class="col-md-2">
+                    <label class="form-label text-light opacity-75 small fw-bold">Stock</label>
+                    <input type="number" min="0" th:field="*{stockPlato}" class="form-control bg-white text-dark" placeholder="Ilimitado">
+                </div>
                 <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn btn-warning w-100 fw-bold">Agregar</button>
                 </div>
@@ -94,6 +98,7 @@
                     <th>Precio</th>
                     <th>Costo</th>
                     <th>Ganancia</th>
+                    <th>Stock</th>
                     <th class="text-end">Acción</th>
                 </tr>
                 </thead>
@@ -102,8 +107,14 @@
                     <td th:text="${p.id}">1</td>
                     <td class="fw-bold" th:text="${p.nombre}">Choripán</td>
                     <td th:text="'$' + ${p.precioVenta}">$1500</td>
-                    <td class="opacity-75" th:text="'$' + ${p.costoProduccion}">$800</td>
+                    <td class="opacity-75" th:text="'$' + ${p.costoProduccion}">$800</td>d>
                     <td th:classappend="${p.precioVenta - p.costoProduccion < 0} ? 'text-danger' : 'text-success'" th:text="'$' + ${p.precioVenta - p.costoProduccion}">$700</td>
+                    <td>
+                        <span class="badge"
+                              th:classappend="${p.stockPlato != null} ? 'bg-info text-dark' : 'bg-secondary bg-opacity-25 text-light'"
+                              th:text="${p.stockPlato != null ? p.stockPlato + ' unidades' : '♾️ Ilimitado'}">
+                        </span>
+                    </td>
                     <td class="text-end">
                         <!-- FIX: antes iba a /unidad-venta (sin validación), ahora a /mi-unidad (con validación) -->
                         <a th:href="@{'/mi-unidad/plato/editar/' + ${p.id}}" class="btn btn-outline-warning btn-sm">Editar</a>

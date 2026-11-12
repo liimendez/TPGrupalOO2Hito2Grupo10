@@ -21,7 +21,13 @@ public class PlatoService implements IPlatoService {
     public Optional<Plato> findById(Long id) { return repo.findById(id); }
 
     @Override
-    public Plato insertOrUpdate(Plato e) { return repo.save(e); }
+    public Plato insertOrUpdate(Plato e) {
+        // Validación de carga: El stock no puede ser negativo
+        if (e.getStockPlato() != null && e.getStockPlato() < 0) {
+            throw new IllegalArgumentException("El stock no puede ser un valor negativo.");
+        }
+        return repo.save(e);
+    }
 
     @Override
     public boolean remove(Long id) {
