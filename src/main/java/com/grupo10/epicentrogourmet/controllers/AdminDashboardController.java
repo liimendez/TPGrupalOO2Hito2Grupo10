@@ -7,6 +7,7 @@ import com.grupo10.epicentrogourmet.repositories.IFestivalRepository;
 import com.grupo10.epicentrogourmet.repositories.IUnidadVentaRepository;
 import com.grupo10.epicentrogourmet.repositories.IUsuarioRepository;
 import com.grupo10.epicentrogourmet.repositories.IPedidoRepository;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,6 +34,7 @@ public class AdminDashboardController {
     }
 
     @GetMapping("/admin/dashboard")
+    @PreAuthorize("hasAnyAuthority('ADMIN','ROLE_ADMIN')") // <-- FIX: solo ADMIN ve el dashboard
     public String dashboard(Model model) {
         LocalDate hoy = LocalDate.now();
 

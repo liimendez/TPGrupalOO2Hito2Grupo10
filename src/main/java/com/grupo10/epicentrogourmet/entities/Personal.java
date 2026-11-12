@@ -8,13 +8,15 @@ import java.time.LocalDate;
 
 @Entity @Inheritance(strategy = InheritanceType.JOINED)
 @Getter @Setter @NoArgsConstructor
-@Table(name = "personal")
+@Table(name = "personal", uniqueConstraints = @UniqueConstraint(columnNames = "dni"))
 @SQLDelete(sql = "UPDATE personal SET activo = false WHERE id = ?")
 
 public abstract class Personal {
 	@Id @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-	private String nombre, apellido, dni;
+	private String nombre, apellido;
+	@Column(nullable = false, unique = true)
+	private String dni;
 	private LocalDate fechaNacimiento, fechaIngreso;
 	private boolean activo = true;
 
@@ -24,7 +26,4 @@ public abstract class Personal {
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "unidad_asignada_id", nullable = false)
 	private UnidadVenta unidadAsignada;
-
-
-
 }
