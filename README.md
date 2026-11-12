@@ -168,8 +168,6 @@ A continuación se detallan los casos de uso adicionales desarrollados por cada 
 | Reporte de desempeño histórico | Permite al responsable consultar el historial de evaluaciones de un empleado por festival, con promedio general, mejor y peor festival. | [PR #24](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10/pull/24) |
 | Reporte de evolución de recaudación | Permite consultar la evolución diaria de la recaudación de una unidad, con total del período, mejor y peor día y variación entre días. | [PR #25](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10/pull/25) |
 
-**Pull Requests:** pendientes de vincular.
-
 ### 👨‍💻 Santiago Sosa — @santisosa-gh
 
 | Caso de uso implementado | Descripción | Pull Request |
