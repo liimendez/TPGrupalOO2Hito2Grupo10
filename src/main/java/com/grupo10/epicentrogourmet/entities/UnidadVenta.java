@@ -6,6 +6,9 @@ import java.util.Set;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 @Entity
@@ -17,10 +20,16 @@ public abstract class UnidadVenta {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
+	@NotBlank(message = "El nombre comercial es obligatorio")
+	@Column(nullable = false)
 	private String nombreComercial;
+
+	@Positive(message = "La superficie debe ser mayor a 0")
+	@Column(nullable = false)
 	private double superficieM2;
 
 	@Column(unique = true, length = 10)
+	@Size(max = 10, message = "El código único no puede superar los 10 caracteres")
 	private String codigoUnico;
 
 	@ManyToMany

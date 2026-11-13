@@ -74,7 +74,7 @@
 			<artifactId>modelmapper</artifactId>
 			<version>3.1.1</version>
 		</dependency>
-		<!-- PDF GENERATION - HISTORIAL LIQUIDACIONES -->
+		<!-- PDF - HISTORIAL LIQUIDACIONES -->
 		<dependency>
 			<groupId>com.github.librepdf</groupId>
 			<artifactId>openpdf</artifactId>

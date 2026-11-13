@@ -17,7 +17,6 @@ public interface IPedidoRepository extends JpaRepository<Pedido, Serializable> {
 
     Optional<Pedido> findById(Long id);
 
-
     @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.detalles d LEFT JOIN FETCH d.plato WHERE p.unidadVenta.id = :unidadVentaId")
     List<Pedido> findByUnidadVentaIdConDetalles(@Param("unidadVentaId") Long unidadVentaId);
 
@@ -27,7 +26,15 @@ public interface IPedidoRepository extends JpaRepository<Pedido, Serializable> {
     @Query("SELECT p FROM Pedido p JOIN p.unidadVenta uv JOIN uv.festivales f WHERE f.id = :festivalId AND uv.id = :unidadVentaId")
     List<Pedido> findByFestivalIdAndUnidadVentaId(@Param("festivalId") Long festivalId, @Param("unidadVentaId") Long unidadVentaId);
 
-    @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.detalles d LEFT JOIN FETCH d.plato WHERE p.unidadVenta.id IN (SELECT uv.id FROM UnidadVenta uv JOIN uv.festivales f WHERE f.id = :festivalId)")
+    // FIX: antes traía TODOS los pedidos de la unidad (histórico).
+    // Ahora solo los que caen dentro de fechaInicio / fechaFin del festival
+    // y hace FETCH de metodoPago para poder aplicar el descuento.
+    @Query("SELECT DISTINCT p FROM Pedido p " +
+            "LEFT JOIN FETCH p.detalles d " +
+            "LEFT JOIN FETCH d.plato " +
+            "LEFT JOIN FETCH p.metodoPago mp " +
+            "JOIN p.unidadVenta uv JOIN uv.festivales f " +
+            "WHERE f.id = :festivalId AND p.fechaPedido BETWEEN f.fechaInicio AND f.fechaFin")
     List<Pedido> findByFestivalIdConDetalles(@Param("festivalId") Long festivalId);
 
     @Query("SELECT DISTINCT p FROM Pedido p " +
