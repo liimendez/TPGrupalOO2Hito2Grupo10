@@ -168,6 +168,18 @@ A continuación se detallan los casos de uso adicionales desarrollados por cada 
 | Reporte de desempeño histórico | Permite al responsable consultar el historial de evaluaciones de un empleado por festival, con promedio general, mejor y peor festival. | [PR #24](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10/pull/24) |
 | Reporte de evolución de recaudación | Permite consultar la evolución diaria de la recaudación de una unidad, con total del período, mejor y peor día y variación entre días. | [PR #25](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10/pull/25) |
 
+## 🔌 ApiRest - Hito 3
+
+### Livia Méndez — @liimendez
+| Controller | Endpoint | Método | Descripción | Pull Request |
+|---|---|---|---|---|
+| VentasApiController | /api/v1/ventas/historial?festivalId&unidadId&desde&hasta | GET | Historial de ventas filtrado por 4 parámetros, 200 con 7 pedidos | [PR #30](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10/pull/30) |
+| VentasApiController | /api/v1/ventas/evaluaciones | POST | Crear evaluación 1-5, 201, promedio 4.33, id 5 en DB | [PR #30](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10/pull/30) |
+
+**Cómo probar:** Levantar con `mvnw.cmd spring-boot:run` y abrir `http://localhost:8080/swagger-ui.html`
+
+
+
 ### 👨‍💻 Santiago Sosa — @santisosa-gh
 
 | Caso de uso implementado | Descripción | Pull Request |
