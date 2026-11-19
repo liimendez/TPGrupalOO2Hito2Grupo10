@@ -167,7 +167,7 @@ public class FestivalController {
                 mav.addObject("unidadesParaMostrar", List.of());
             }
         } else if (esEmpleado) {
-            // FIX: antes el empleado caía en el else de ADMIN y veía todas las unidades
+
             UnidadVenta miUnidad = getUnidadDelLogueado();
             boolean yaAnotado = miUnidad != null && festival.getUnidadesVenta().stream()
                     .anyMatch(uv -> uv.getId().equals(miUnidad.getId()));
@@ -221,6 +221,10 @@ public class FestivalController {
     @Transactional(readOnly = true)
     public String rankingRecaudacion(@PathVariable Long id, Model model) {
         Festival festival = festivalService.findById(id).orElseThrow(() -> new RuntimeException("Festival no encontrado"));
+
+        // El repository ya filtra por fecha (BETWEEN fechaInicio AND fechaFin)
+        // y trae metodoPago con FETCH para poder aplicar el descuento.
+        // Si no cambiaste el repository, este método solo no alcanza.
         List<Pedido> pedidos = pedidoRepository.findByFestivalIdConDetalles(id);
 
         Map<Long, List<Pedido>> porUnidadId = pedidos.stream()
@@ -230,11 +234,22 @@ public class FestivalController {
 
         for (UnidadVenta uv : festival.getUnidadesVenta()) {
             List<Pedido> pedidosDeUnidad = porUnidadId.getOrDefault(uv.getId(), List.of());
+
+
             double recaudacion = pedidosDeUnidad.stream()
                     .filter(p -> p.getDetalles() != null)
-                    .flatMap(p -> p.getDetalles().stream())
-                    .filter(d -> d.getPlato() != null)
-                    .mapToDouble(d -> d.getCantidad() * d.getPlato().getPrecioVenta())
+                    .flatMap(p -> {
+                        double descuento = 0;
+
+                        if (p.getMetodoPago() != null) {
+                            descuento = p.getMetodoPago().getDescuentoPorcentaje();
+                        }
+                        double factor = 1 - descuento / 100.0;
+                        return p.getDetalles().stream()
+                                .filter(d -> d.getPlato() != null)
+                                .map(d -> d.getSubtotal() * factor);
+                    })
+                    .mapToDouble(Double::doubleValue)
                     .sum();
 
             Map<String, Object> fila = new HashMap<>();

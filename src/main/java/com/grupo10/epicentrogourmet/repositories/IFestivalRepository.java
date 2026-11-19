@@ -14,7 +14,8 @@ import java.util.Optional;
 @Repository("festivalRepository")
 public interface IFestivalRepository extends JpaRepository<Festival, Serializable> {
     public abstract Optional<Festival> findById(Long id);
-
+    @Query("SELECT f FROM Festival f WHERE f.activo = true ORDER BY f.fechaInicio DESC")
+    List<Festival> findAllActivos();
     @Query("SELECT f FROM Festival f LEFT JOIN FETCH f.unidadesVenta WHERE f.id = :id")
     Optional<Festival> findByIdWithUnidades(@Param("id") Long id);
 

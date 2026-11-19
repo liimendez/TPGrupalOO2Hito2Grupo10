@@ -31,6 +31,8 @@ public class Festival {
     @Column(nullable = false)
     private LocalDate fechaFin;
 
+    @Column(nullable = false)
+    private boolean activo = true;
 
     @Column(name = "imagen_url", length = 500)
     private String imagenUrl;
