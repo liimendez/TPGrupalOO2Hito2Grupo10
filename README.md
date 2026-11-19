@@ -173,8 +173,8 @@ A continuación se detallan los casos de uso adicionales desarrollados por cada 
 ### Livia Méndez — @liimendez
 | Controller | Endpoint | Método | Descripción | Pull Request |
 |---|---|---|---|---|
-| VentasApiController | /api/v1/ventas/historial?festivalId&unidadId&desde&hasta | GET | Historial de ventas filtrado por 4 parámetros, 200 con 7 pedidos | [PR #30](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10/pull/30) |
-| VentasApiController | /api/v1/ventas/evaluaciones | POST | Crear evaluación 1-5, 201, promedio 4.33, id 5 en DB | [PR #30](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10/pull/30) |
+| VentasApiController | /api/v1/ventas/historial?festivalId&unidadId&desde&hasta | GET | Historial de ventas filtrado por 4 parámetros, 200 con 7 pedidos | [PR #30](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10/pull/31) |
+| VentasApiController | /api/v1/ventas/evaluaciones | POST | Crear evaluación 1-5, 201, promedio 4.33, id 5 en DB | [PR #30](https://github.com/liimendez/TPGrupalOO2Hito2Grupo10/pull/31) |
 
 **Cómo probar:** Levantar con `mvnw.cmd spring-boot:run` y abrir `http://localhost:8080/swagger-ui.html`
 
