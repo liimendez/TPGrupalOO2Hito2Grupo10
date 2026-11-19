@@ -1,5 +1,6 @@
 package com.grupo10.epicentrogourmet.controllers.api;
 
+import com.grupo10.epicentrogourmet.dtos.EvaluacionApiDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,7 +36,7 @@ public class VentasApiController {
 
     @Operation(summary = "POST - Crear evaluacion de empleado - Livia Mendez")
     @PostMapping("/evaluaciones")
-    public ResponseEntity<?> crearEvaluacion(@RequestBody Map<String, Object> dto) {
+    public ResponseEntity<?> crearEvaluacion(@RequestBody EvaluacionApiDTO dto) {
         return ResponseEntity.status(201).body(Map.of(
                 "mensaje", "Evaluacion creada",
                 "datos", dto
