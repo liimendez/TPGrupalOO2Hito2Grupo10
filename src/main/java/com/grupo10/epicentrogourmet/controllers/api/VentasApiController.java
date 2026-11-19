@@ -65,27 +65,33 @@ public class VentasApiController {
     @Operation(summary = "POST - Crear evaluacion de empleado - Livia Mendez")
     @PostMapping("/evaluaciones")
     public ResponseEntity<?> crearEvaluacion(@RequestBody EvaluacionApiDTO dto) {
-        Festival festival = festivalRepository.findById(dto.getFestivalId())
-                .orElseThrow(() -> new IllegalArgumentException("Festival no encontrado"));
-        Personal empleado = personalRepository.findById(dto.getEmpleadoId())
-                .orElseThrow(() -> new IllegalArgumentException("Empleado no encontrado"));
+        try {
+            Festival festival = festivalRepository.findById(dto.getFestivalId())
+                    .orElseThrow(() -> new IllegalArgumentException("Festival no encontrado"));
+            Personal empleado = personalRepository.findById(dto.getEmpleadoId())
+                    .orElseThrow(() -> new IllegalArgumentException("Empleado no encontrado"));
 
-        Evaluacion evaluacion = new Evaluacion();
-        evaluacion.setFestival(festival);
-        evaluacion.setEvaluado(empleado);
-        evaluacion.setPuntualidad(dto.getPuntualidad());
-        evaluacion.setAtencionCliente(dto.getAtencionCliente());
-        evaluacion.setHigienePresentacion(dto.getHigienePresentacion());
-        evaluacion.setObservacion(dto.getObservacion());
-        evaluacion.setFechaEvaluacion(LocalDate.now());
+            Evaluacion evaluacion = new Evaluacion();
+            evaluacion.setFestival(festival);
+            evaluacion.setEvaluado(empleado);
+            evaluacion.setPuntualidad(dto.getPuntualidad());
+            evaluacion.setAtencionCliente(dto.getAtencionCliente());
+            evaluacion.setHigienePresentacion(dto.getHigienePresentacion());
+            evaluacion.setObservacion(dto.getObservacion());
+            evaluacion.setFechaEvaluacion(LocalDate.now());
 
-        evaluacionService.guardar(evaluacion);
+            evaluacionService.guardar(evaluacion);
 
-        return ResponseEntity.status(201).body(Map.of(
-                "mensaje", "Evaluacion creada",
-                "empleado", empleado.getNombre() + " " + empleado.getApellido(),
-                "festivalId", festival.getId(),
-                "promedio", evaluacion.getPromedio()
-        ));
+            return ResponseEntity.status(201).body(Map.of(
+                    "mensaje", "Evaluacion creada",
+                    "empleado", empleado.getNombre() + " " + empleado.getApellido(),
+                    "festivalId", festival.getId(),
+                    "promedio", evaluacion.getPromedio()
+            ));
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", e.getMessage()
+            ));
+        }
     }
 }
