@@ -37,7 +37,9 @@ public class SecurityConfiguration {
                             "/css/**", "/js/**", "/img/**", "/imgs/**",
                             "/images/**", "/static/**",
                             "/vendor/**", "/api/v1/**", "/error/**",
-                            "/unidad-venta/new", "/unidad-venta/save").permitAll();
+                            "/unidad-venta/new", "/unidad-venta/save",
+                            "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**",
+                            "/swagger-resources/**", "/webjars/**").permitAll();
 
                     auth.requestMatchers("/admin/**", "/festival/new", "/festival/editar/**", "/festival/eliminar/**",
                             "/festival/save", "/usuarios/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN");
