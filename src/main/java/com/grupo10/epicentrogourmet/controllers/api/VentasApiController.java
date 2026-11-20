@@ -3,15 +3,12 @@ package com.grupo10.epicentrogourmet.controllers.api;
 import com.grupo10.epicentrogourmet.dto.VentaDiariaDTO;
 import com.grupo10.epicentrogourmet.dtos.EvaluacionApiDTO;
 import com.grupo10.epicentrogourmet.entities.Evaluacion;
-import com.grupo10.epicentrogourmet.entities.Festival;
-import com.grupo10.epicentrogourmet.entities.Personal;
-import com.grupo10.epicentrogourmet.repositories.IFestivalRepository;
-import com.grupo10.epicentrogourmet.repositories.IPersonalRepository;
 import com.grupo10.epicentrogourmet.services.IEvaluacionService;
 import com.grupo10.epicentrogourmet.services.IHistorialVentasService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -31,12 +28,6 @@ public class VentasApiController {
 
     @Autowired
     private IEvaluacionService evaluacionService;
-
-    @Autowired
-    private IFestivalRepository festivalRepository;
-
-    @Autowired
-    private IPersonalRepository personalRepository;
 
     @Operation(summary = "GET - Historial de ventas filtrado - Livia Mendez",
             description = "Filtra por festival, unidad, desde y hasta. Minimo 3 parametros exigidos.")
@@ -64,34 +55,51 @@ public class VentasApiController {
 
     @Operation(summary = "POST - Crear evaluacion de empleado - Livia Mendez")
     @PostMapping("/evaluaciones")
-    public ResponseEntity<?> crearEvaluacion(@RequestBody EvaluacionApiDTO dto) {
+    public ResponseEntity<?> crearEvaluacion(@Valid @RequestBody EvaluacionApiDTO dto) {
         try {
-            Festival festival = festivalRepository.findById(dto.getFestivalId())
-                    .orElseThrow(() -> new IllegalArgumentException("Festival no encontrado"));
-            Personal empleado = personalRepository.findById(dto.getEmpleadoId())
-                    .orElseThrow(() -> new IllegalArgumentException("Empleado no encontrado"));
-
-            Evaluacion evaluacion = new Evaluacion();
-            evaluacion.setFestival(festival);
-            evaluacion.setEvaluado(empleado);
-            evaluacion.setPuntualidad(dto.getPuntualidad());
-            evaluacion.setAtencionCliente(dto.getAtencionCliente());
-            evaluacion.setHigienePresentacion(dto.getHigienePresentacion());
-            evaluacion.setObservacion(dto.getObservacion());
-            evaluacion.setFechaEvaluacion(LocalDate.now());
-
-            evaluacionService.guardar(evaluacion);
-
+            Evaluacion evaluacion = evaluacionService.crearDesdeDTO(dto);
             return ResponseEntity.status(201).body(Map.of(
                     "mensaje", "Evaluacion creada",
-                    "empleado", empleado.getNombre() + " " + empleado.getApellido(),
-                    "festivalId", festival.getId(),
+                    "empleado", evaluacion.getEvaluado().getNombre() + " " + evaluacion.getEvaluado().getApellido(),
+                    "festivalId", evaluacion.getFestival().getId(),
                     "promedio", evaluacion.getPromedio()
             ));
         } catch (IllegalStateException | IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", e.getMessage()
-            ));
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    @Operation(summary = "PUT - Actualizar evaluacion - Livia Mendez")
+    @PutMapping("/evaluaciones/{id}")
+    public ResponseEntity<?> actualizarEvaluacion(@PathVariable Long id, @Valid @RequestBody EvaluacionApiDTO dto) {
+        try {
+            Evaluacion evaluacion = evaluacionService.actualizar(id, dto);
+            return ResponseEntity.ok(Map.of(
+                    "mensaje", "Evaluacion actualizada",
+                    "id", evaluacion.getId(),
+                    "promedio", evaluacion.getPromedio()
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @Operation(summary = "DELETE - Eliminar evaluacion - Livia Mendez")
+    @DeleteMapping("/evaluaciones/{id}")
+    public ResponseEntity<?> eliminarEvaluacion(@PathVariable Long id) {
+        try {
+            evaluacionService.eliminar(id);
+            return ResponseEntity.ok(Map.of(
+                    "mensaje", "Evaluacion eliminada",
+                    "id", id
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+
+
+
+
 }

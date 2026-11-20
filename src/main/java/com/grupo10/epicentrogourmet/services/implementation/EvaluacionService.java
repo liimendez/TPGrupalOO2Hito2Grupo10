@@ -1,7 +1,12 @@
 package com.grupo10.epicentrogourmet.services.implementation;
 
+import com.grupo10.epicentrogourmet.dtos.EvaluacionApiDTO;
 import com.grupo10.epicentrogourmet.entities.Evaluacion;
+import com.grupo10.epicentrogourmet.entities.Festival;
+import com.grupo10.epicentrogourmet.entities.Personal;
 import com.grupo10.epicentrogourmet.repositories.IEvaluacionRepository;
+import com.grupo10.epicentrogourmet.repositories.IFestivalRepository;
+import com.grupo10.epicentrogourmet.repositories.IPersonalRepository;
 import com.grupo10.epicentrogourmet.services.IEvaluacionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,6 +18,13 @@ public class EvaluacionService implements IEvaluacionService {
 
     @Autowired
     private IEvaluacionRepository evaluacionRepository;
+
+    @Autowired
+    private IFestivalRepository festivalRepository;
+
+    @Autowired
+    private IPersonalRepository personalRepository;
+
     public static final double UMBRAL_DESTACADO = 4.5;
     public static final double UMBRAL_OBSERVACION = 2.5;
     public static final double PLUS_DESTACADO = 15000;
@@ -23,7 +35,6 @@ public class EvaluacionService implements IEvaluacionService {
         if (yaFueEvaluado(evaluacion.getEvaluado().getId(), evaluacion.getFestival().getId())) {
             throw new IllegalStateException("Este empleado ya fue evaluado en este festival");
         }
-
 
         double promedio = calcularPromedio(
                 evaluacion.getPuntualidad(),
@@ -37,6 +48,25 @@ public class EvaluacionService implements IEvaluacionService {
         }
 
         return evaluacionRepository.save(evaluacion);
+    }
+
+    @Override
+    public Evaluacion crearDesdeDTO(EvaluacionApiDTO dto) {
+        Festival festival = festivalRepository.findById(dto.getFestivalId())
+                .orElseThrow(() -> new IllegalArgumentException("Festival no encontrado"));
+        Personal empleado = personalRepository.findById(dto.getEmpleadoId())
+                .orElseThrow(() -> new IllegalArgumentException("Empleado no encontrado"));
+
+        Evaluacion evaluacion = new Evaluacion();
+        evaluacion.setFestival(festival);
+        evaluacion.setEvaluado(empleado);
+        evaluacion.setPuntualidad(dto.getPuntualidad());
+        evaluacion.setAtencionCliente(dto.getAtencionCliente());
+        evaluacion.setHigienePresentacion(dto.getHigienePresentacion());
+        evaluacion.setObservacion(dto.getObservacion());
+        evaluacion.setFechaEvaluacion(LocalDate.now());
+
+        return guardar(evaluacion);
     }
 
     @Override
@@ -72,9 +102,10 @@ public class EvaluacionService implements IEvaluacionService {
     @Override
     public String getResultado(double promedio) {
         if (esDestacado(promedio)) return "DESTACADO ⭐";
-        if (esEnObservacion(promedio)) return "EN OBSERVACIÓN ⚠️";
+        if (esEnObservacion(promedio)) return "EN OBSERVACIÓN ⚠";
         return "SATISFACTORIO";
     }
+
     @Override
     public List<Evaluacion> getHistorialPorEmpleado(Long empleadoId) {
         return evaluacionRepository.findByEvaluadoIdOrderByFestivalFechaInicioAsc(empleadoId);
@@ -85,6 +116,33 @@ public class EvaluacionService implements IEvaluacionService {
         List<Evaluacion> lista = getHistorialPorEmpleado(empleadoId);
         if (lista.isEmpty()) return 0;
         return lista.stream().mapToDouble(Evaluacion::getPromedio).average().orElse(0);
+    }
+
+    @Override
+    public Evaluacion actualizar(Long id, EvaluacionApiDTO dto) {
+        Evaluacion evaluacion = evaluacionRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Evaluacion no encontrada con id " + id));
+
+        evaluacion.setPuntualidad(dto.getPuntualidad());
+        evaluacion.setAtencionCliente(dto.getAtencionCliente());
+        evaluacion.setHigienePresentacion(dto.getHigienePresentacion());
+        evaluacion.setObservacion(dto.getObservacion());
+
+        double promedio = calcularPromedio(
+                evaluacion.getPuntualidad(),
+                evaluacion.getAtencionCliente(),
+                evaluacion.getHigienePresentacion()
+        );
+        evaluacion.setPromedio(promedio);
+
+        return evaluacionRepository.save(evaluacion);
+    }
+
+    @Override
+    public void eliminar(Long id) {
+        Evaluacion evaluacion = evaluacionRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Evaluacion no encontrada con id " + id));
+        evaluacionRepository.delete(evaluacion);
     }
 
 
