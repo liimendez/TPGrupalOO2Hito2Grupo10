@@ -182,8 +182,6 @@ A continuación se detallan los casos de uso adicionales desarrollados por cada 
 ### Santiago sosa - @santisosa -gh
 
 
-
-
 **Cómo probar:** Levantar con `mvnw.cmd spring-boot:run` y abrir `http://localhost:8080/swagger-ui.html`
 
 
